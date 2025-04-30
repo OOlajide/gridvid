@@ -19,46 +19,40 @@ export interface UniversalProfile {
   provider: any;
   walletClient: any;
   publicClient: PublicClient;
-  accounts: string[];
-  contextAccounts: string[];
+  accounts: Array<`0x${string}`>;
+  contextAccounts: Array<`0x${string}`>;
   chainId: number;
 }
 
-let upProvider: any = null;
-let walletClient: any = null;
-let publicClient: PublicClient | null = null;
+// Create provider instance outside components
+export const provider = createClientUPProvider();
+
+// Create wallet client to connect to provider
+export const walletClient = createWalletClient({
+  chain: lukso,
+  transport: custom(provider),
+});
+
+// Create public client for read operations
+export const publicClient = createPublicClient({
+  chain: lukso,
+  transport: http(),
+});
 
 export async function initializeUPProvider(): Promise<UniversalProfile> {
   try {
-    // Create the UP provider if not already created
-    if (!upProvider) {
-      upProvider = createClientUPProvider();
-      
-      // Create wallet client to connect to provider
-      walletClient = createWalletClient({
-        chain: lukso,
-        transport: custom(upProvider),
-      });
-      
-      // Create public client for read operations
-      publicClient = createPublicClient({
-        chain: lukso,
-        transport: http(),
-      });
-    }
-
     // Get accounts and chainId
-    const accounts = await upProvider.request({ method: "eth_accounts" });
-    const contextAccounts = upProvider.contextAccounts || [];
-    const chainId = await upProvider.request({ method: "eth_chainId" });
+    const accounts = provider.accounts as Array<`0x${string}`>;
+    const contextAccounts = provider.contextAccounts || [];
+    const chainId = await provider.request({ method: "eth_chainId" });
 
     return {
-      provider: upProvider,
+      provider,
       walletClient,
-      publicClient: publicClient as PublicClient,
+      publicClient,
       accounts,
       contextAccounts,
-      chainId: parseInt(chainId, 16),
+      chainId: parseInt(chainId as string, 16),
     };
   } catch (error) {
     console.error("Error initializing UP provider:", error);
@@ -68,11 +62,7 @@ export async function initializeUPProvider(): Promise<UniversalProfile> {
 
 export async function makePayment(): Promise<string> {
   try {
-    if (!upProvider || !walletClient || !publicClient) {
-      throw new Error("Provider not initialized");
-    }
-
-    const accounts = await upProvider.request({ method: "eth_accounts" });
+    const accounts = provider.accounts as Array<`0x${string}`>;
     
     if (!accounts || accounts.length === 0) {
       throw new Error("No accounts available");
@@ -84,14 +74,12 @@ export async function makePayment(): Promise<string> {
     // Send transaction
     const hash = await walletClient.sendTransaction({
       account: accounts[0],
-      to: PAYMENT_ADDRESS,
+      to: PAYMENT_ADDRESS as `0x${string}`,
       value: paymentAmountWei,
     });
 
-    // Notify that a transaction was sent (this is mainly for the channel to forward)
-    if (typeof upProvider.emit === 'function') {
-      upProvider.emit('sentTransaction', { hash });
-    }
+    // Log the transaction hash
+    console.log("Transaction sent:", hash);
 
     return hash;
   } catch (error) {

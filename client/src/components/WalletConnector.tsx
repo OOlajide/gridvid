@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
-import { initializeUPProvider } from "@/lib/lukso";
+import { provider } from "@/lib/lukso";
 import { useWorkflow } from "@/hooks/use-workflow";
 import { useToast } from "@/hooks/use-toast";
 
@@ -22,62 +22,54 @@ export default function WalletConnector({ buttonStyle = "default" }: WalletConne
   
   const [userAddressShort, setUserAddressShort] = useState<string>("");
   
+  // Helper to update connected status
+  const updateConnected = useCallback(
+    (_accounts: string[], _contextAccounts: string[]) => {
+      setWalletConnected(_accounts.length > 0);
+      
+      if (_accounts.length > 0) {
+        // Set short address for display
+        const address = _accounts[0];
+        setUserAddressShort(`${address.slice(0, 6)}...${address.slice(-4)}`);
+      }
+
+      // Check if we can proceed to payment
+      if (_accounts.length > 0 && _contextAccounts.length > 0) {
+        setStep('payment');
+      }
+    },
+    [setWalletConnected, setStep]
+  );
+  
   const connectWallet = useCallback(async () => {
     try {
-      const up = await initializeUPProvider();
+      // Handle account changes
+      const accountsChanged = (_accounts: string[]) => {
+        setAllowedAccounts(_accounts);
+        updateConnected(_accounts, contextAccounts);
+      };
+
+      const contextAccountsChanged = (_accounts: string[]) => {
+        setContextAccounts(_accounts);
+        updateConnected(allowedAccounts, _accounts);
+      };
+
+      // Add event listeners
+      provider.on('accountsChanged', accountsChanged);
+      provider.on('contextAccountsChanged', contextAccountsChanged);
       
       // Check if we already have accounts available
-      if (up.accounts.length > 0) {
-        setAllowedAccounts(up.accounts);
-        setContextAccounts(up.contextAccounts);
-        setWalletConnected(true);
-        setStep('payment');
+      const _accounts = provider.accounts as Array<`0x${string}`>;
+      const _contextAccounts = provider.contextAccounts || [];
+      
+      setAllowedAccounts(_accounts);
+      setContextAccounts(_contextAccounts);
+      updateConnected(_accounts, _contextAccounts);
         
-        // Set short address for display
-        if (up.accounts[0]) {
-          const address = up.accounts[0];
-          setUserAddressShort(`${address.slice(0, 6)}...${address.slice(-4)}`);
-        }
-        
-        toast({
-          title: "Wallet Connected",
-          description: "Your Universal Profile has been connected successfully!",
-        });
-      } else {
-        // Setup event listeners if no accounts yet
-        const accountsChanged = (accounts: string[]) => {
-          setAllowedAccounts(accounts);
-          setWalletConnected(accounts.length > 0);
-          
-          if (accounts.length > 0) {
-            const address = accounts[0];
-            setUserAddressShort(`${address.slice(0, 6)}...${address.slice(-4)}`);
-            
-            // If we also have context accounts, proceed to payment
-            if (contextAccounts.length > 0) {
-              setStep('payment');
-            }
-          }
-        };
-
-        const contextAccountsChanged = (accounts: string[]) => {
-          setContextAccounts(accounts);
-          
-          // If we also have allowed accounts, proceed to payment
-          if (allowedAccounts.length > 0 && accounts.length > 0) {
-            setStep('payment');
-          }
-        };
-
-        // Add event listeners
-        up.provider.on('accountsChanged', accountsChanged);
-        up.provider.on('contextAccountsChanged', contextAccountsChanged);
-        
-        toast({
-          title: "Connecting Wallet",
-          description: "Please approve the connection in your LUKSO Universal Profile extension.",
-        });
-      }
+      toast({
+        title: "Connecting Wallet",
+        description: "Please approve the connection in your LUKSO Universal Profile extension.",
+      });
     } catch (error: any) {
       console.error('Error connecting wallet:', error);
       toast({
@@ -86,32 +78,49 @@ export default function WalletConnector({ buttonStyle = "default" }: WalletConne
         variant: "destructive",
       });
     }
-  }, [allowedAccounts, contextAccounts, setAllowedAccounts, setContextAccounts, setStep, setWalletConnected, toast]);
+  }, [allowedAccounts, contextAccounts, setAllowedAccounts, setContextAccounts, updateConnected, toast]);
 
   // Monitor for wallet changes when component mounts
   useEffect(() => {
-    // Try to initialize and check for existing connection
-    const checkConnection = async () => {
-      try {
-        const up = await initializeUPProvider();
-        
-        if (up.accounts.length > 0) {
-          setAllowedAccounts(up.accounts);
-          setContextAccounts(up.contextAccounts);
-          setWalletConnected(true);
-          
-          if (up.accounts[0]) {
-            const address = up.accounts[0];
-            setUserAddressShort(`${address.slice(0, 6)}...${address.slice(-4)}`);
-          }
-        }
-      } catch (error) {
-        console.error('Error checking wallet connection:', error);
-      }
+    // Handle account changes
+    const accountsChanged = (_accounts: string[]) => {
+      setAllowedAccounts(_accounts);
+      updateConnected(_accounts, contextAccounts);
     };
-    
-    checkConnection();
-  }, [setAllowedAccounts, setContextAccounts, setWalletConnected]);
+
+    const contextAccountsChanged = (_accounts: string[]) => {
+      setContextAccounts(_accounts);
+      updateConnected(allowedAccounts, _accounts);
+    };
+
+    // Check existing connections
+    try {
+      const _accounts = provider.accounts as Array<`0x${string}`>;
+      const _contextAccounts = provider.contextAccounts;
+      
+      setAllowedAccounts(_accounts);
+      setContextAccounts(_contextAccounts);
+      updateConnected(_accounts, _contextAccounts);
+    } catch (error) {
+      console.error('Error checking wallet connection:', error);
+    }
+
+    // Set up event listeners
+    provider.on('accountsChanged', accountsChanged);
+    provider.on('contextAccountsChanged', contextAccountsChanged);
+
+    // Cleanup listeners
+    return () => {
+      provider.removeListener('accountsChanged', accountsChanged);
+      provider.removeListener('contextAccountsChanged', contextAccountsChanged);
+    };
+  }, [
+    allowedAccounts, 
+    contextAccounts, 
+    setAllowedAccounts, 
+    setContextAccounts, 
+    updateConnected
+  ]);
 
   return (
     <div>
