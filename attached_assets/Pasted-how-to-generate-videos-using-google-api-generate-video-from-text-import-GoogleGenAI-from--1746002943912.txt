@@ -1,0 +1,91 @@
+how to generate videos using google api
+
+generate video from text
+
+import { GoogleGenAI } from "@google/genai";
+import { createWriteStream } from "fs";
+import { Readable } from "stream";
+
+const ai = new GoogleGenAI({ apiKey: "GOOGLE_API_KEY" });
+
+async function main() {
+  let operation = await ai.models.generateVideos({
+    model: "veo-2.0-generate-001",
+    prompt: "Panning wide shot of a calico kitten sleeping in the sunshine",
+    config: {
+      personGeneration: "dont_allow",
+      aspectRatio: "16:9",
+    },
+  });
+
+  while (!operation.done) {
+    await new Promise((resolve) => setTimeout(resolve, 10000));
+    operation = await ai.operations.getVideosOperation({
+      operation: operation,
+    });
+  }
+
+  operation.response?.generatedVideos?.forEach(async (generatedVideo, n) => {
+    const resp = await fetch(`${generatedVideo.video?.uri}&key=GOOGLE_API_KEY`); // append your API key
+    const writer = createWriteStream(`video${n}.mp4`);
+    Readable.fromWeb(resp.body).pipe(writer);
+  });
+}
+
+main();
+
+
+generate video from image
+
+import { GoogleGenAI } from "@google/genai";
+
+const ai = new GoogleGenAI({ apiKey: "GOOGLE_API_KEY" });
+const response = await ai.models.generateImages({
+  model: "imagen-3.0-generate-002",
+  prompt: "Panning wide shot of a calico kitten sleeping in the sunshine",
+  config: {
+    numberOfImages: 1,
+  },
+});
+
+// you'll pass response.generatedImages[0].image.imageBytes to Veo, then generate a video using the resulting image as the first frame:
+
+import { GoogleGenAI } from "@google/genai";
+import { createWriteStream } from "fs";
+import { Readable } from "stream";
+
+const ai = new GoogleGenAI({ apiKey: "GOOGLE_API_KEY" });
+
+async function main() {
+  // get image bytes from Imagen, as shown above
+
+  let operation = await ai.models.generateVideos({
+    model: "veo-2.0-generate-001",
+    prompt: "Panning wide shot of a calico kitten sleeping in the sunshine",
+    image: {
+      imageBytes: response.generatedImages[0].image.imageBytes, // response from Imagen
+      mimeType: "image/png",
+    },
+    config: {
+      aspectRatio: "16:9",
+      numberOfVideos: 2,
+    },
+  });
+
+  while (!operation.done) {
+    await new Promise((resolve) => setTimeout(resolve, 10000));
+    operation = await ai.operations.getVideosOperation({
+      operation: operation,
+    });
+  }
+
+  operation.response?.generatedVideos?.forEach(async (generatedVideo, n) => {
+    const resp = await fetch(
+      `${generatedVideo.video?.uri}&key=GOOGLE_API_KEY`, // append your API key
+    );
+    const writer = createWriteStream(`video${n}.mp4`);
+    Readable.fromWeb(resp.body).pipe(writer);
+  });
+}
+
+main();
