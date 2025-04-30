@@ -63,7 +63,7 @@ export default function PaymentSection() {
     setTransactionStatus("Waiting for blockchain confirmation...");
     
     // Poll every 5 seconds to check transaction status
-    const maxAttempts = 12; // Wait for up to 1 minute (12 * 5 seconds)
+    const maxAttempts = 24; // Wait for up to 2 minutes (24 * 5 seconds)
     let attempts = 0;
     
     const poll = async () => {
@@ -83,6 +83,7 @@ export default function PaymentSection() {
           // Clear pending transaction
           setPendingTransaction(null);
           setTransactionStatus("");
+          setIsProcessing(false);
           
           // Update workflow state
           completePayment();
@@ -96,14 +97,14 @@ export default function PaymentSection() {
         if (attempts >= maxAttempts) {
           toast({
             title: "Verification Timeout",
-            description: "Transaction sent but confirmation is taking longer than expected. You can continue or check back later.",
+            description: "Transaction sent but confirmation is taking too long. Please check the block explorer and try again later.",
+            variant: "destructive"
           });
           
-          // We'll let the user continue since the transaction might still confirm later
+          // Reset the UI but don't allow proceeding
           setPendingTransaction(null);
           setTransactionStatus("");
-          completePayment();
-          setStep('generation');
+          setIsProcessing(false);
           return true;
         }
         
@@ -139,14 +140,12 @@ export default function PaymentSection() {
         amount: result.lyxAmount
       });
       
-      // Start polling for confirmation (but don't await it)
+      // Start polling for confirmation
       pollTransactionStatus(result.hash, result.lyxAmount);
       
-      // Allow user to continue immediately after transaction is sent
-      setIsProcessing(false);
-      
-      // Don't wait for verification to complete - move to the next step
-      // The polling will update the UI when confirmation happens
+      // Keep processing state true while waiting for confirmation
+      // The UI will show the transaction status and blockchain explorer link
+      // The user will not be able to proceed until confirmation is complete
       
     } catch (error: any) {
       console.error('Payment error:', error);
@@ -245,19 +244,15 @@ export default function PaymentSection() {
           </div>
           
           <div className="text-center space-y-3">
-            <Button
-              onClick={() => {
-                completePayment();
-                setStep('generation');
-              }}
-              className="bg-primary hover:bg-opacity-90 text-white px-6 py-3 rounded font-semibold flex items-center mx-auto transition-all"
-            >
-              <span className="material-icons mr-2">navigate_next</span>
-              Continue to Video Generation
-            </Button>
-            <p className="text-xs text-text-secondary">
-              You can continue while we wait for blockchain confirmation
-            </p>
+            <div className="bg-background-lighter p-3 rounded-lg text-sm text-text-secondary">
+              <div className="flex items-center justify-center">
+                <span className="material-icons mr-2 text-secondary text-xl">info</span>
+                <span>Please wait for blockchain confirmation</span>
+              </div>
+              <p className="text-xs mt-1">
+                The transaction must be confirmed on the blockchain before proceeding to video generation
+              </p>
+            </div>
           </div>
         </div>
       ) : (
