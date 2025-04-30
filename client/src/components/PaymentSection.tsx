@@ -17,10 +17,6 @@ export default function PaymentSection() {
   const [lyxPrice, setLyxPrice] = useState<number | null>(null);
   const [paymentAmount, setPaymentAmount] = useState<string>(DEFAULT_PAYMENT_AMOUNT);
   const [isLoadingPrice, setIsLoadingPrice] = useState(true);
-  const [transactionHash, setTransactionHash] = useState<string>("");
-  const [storedPaymentAmount, setStoredPaymentAmount] = useState<string>("");
-  const [awaitingVerification, setAwaitingVerification] = useState(false);
-  const [verificationAttempt, setVerificationAttempt] = useState(0);
 
   // Fetch current LYX price when component mounts
   useEffect(() => {
@@ -59,97 +55,6 @@ export default function PaymentSection() {
     fetchLyxPrice();
   }, [toast]);
 
-  // Helper function to wait/sleep
-  const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-
-  // Function to retry verification with exponential backoff
-  const verifyWithRetry = async (hash: string, amount: string, maxAttempts = 5): Promise<boolean> => {
-    let attempts = 0;
-    let lastError;
-    
-    while (attempts < maxAttempts) {
-      try {
-        // Wait longer between each attempt (exponential backoff)
-        // 1st attempt: wait 2s, 2nd: 4s, 3rd: 8s, etc.
-        const waitTime = Math.pow(2, attempts) * 1000;
-        await sleep(waitTime);
-        
-        console.log(`Verification attempt ${attempts + 1}/${maxAttempts} for tx ${hash}`);
-        const verified = await verifyPayment(hash, amount);
-        
-        if (verified) {
-          return true;
-        }
-      } catch (error) {
-        console.log(`Verification attempt ${attempts + 1} failed:`, error);
-        lastError = error;
-      }
-      
-      attempts++;
-    }
-    
-    // If we got here, all attempts failed
-    throw lastError || new Error("Transaction verification failed after multiple attempts");
-  };
-
-  // Function to manually verify a payment
-  const handleVerifyPayment = async () => {
-    if (!transactionHash || !storedPaymentAmount) {
-      toast({
-        title: "Verification Error",
-        description: "Missing transaction information. Please try making the payment again.",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    setIsProcessing(true);
-    setVerificationAttempt(prev => prev + 1);
-    
-    try {
-      toast({
-        title: "Verifying Payment",
-        description: "Checking transaction confirmation...",
-      });
-      
-      // Try to verify the transaction
-      const verified = await verifyPayment(transactionHash, storedPaymentAmount);
-      
-      if (verified) {
-        toast({
-          title: "Payment Successful",
-          description: `Your payment of ${storedPaymentAmount} LYX has been confirmed!`,
-        });
-        
-        // Update workflow state
-        completePayment();
-        setStep('generation');
-        
-        // Reset verification state
-        setAwaitingVerification(false);
-        setTransactionHash("");
-        setStoredPaymentAmount("");
-      }
-    } catch (error: any) {
-      console.error('Verification error:', error);
-      
-      if (verificationAttempt >= 4) {
-        toast({
-          title: "Verification Failed",
-          description: "We couldn't verify your payment after multiple attempts. The transaction may have failed or is taking too long to process.",
-          variant: "destructive",
-        });
-      } else {
-        toast({
-          title: "Verification Pending",
-          description: "Your transaction is still being processed by the blockchain. Please wait a few more moments and try verifying again.",
-        });
-      }
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
   const handlePayment = async () => {
     setIsProcessing(true);
     
@@ -162,17 +67,13 @@ export default function PaymentSection() {
       
       const result = await makePayment();
       
-      // Store the payment amount and transaction hash for later verification if needed
-      setStoredPaymentAmount(result.lyxAmount);
-      setTransactionHash(result.hash);
-      
       toast({
         title: "Transaction Sent",
-        description: "Waiting for transaction confirmation (this may take 30+ seconds)...",
+        description: "Waiting for transaction confirmation...",
       });
       
-      // Verify payment with retries
-      const verified = await verifyWithRetry(result.hash, result.lyxAmount);
+      // Verify payment was successful
+      const verified = await verifyPayment(result.hash, result.lyxAmount);
       
       if (verified) {
         toast({
@@ -186,23 +87,11 @@ export default function PaymentSection() {
       }
     } catch (error: any) {
       console.error('Payment error:', error);
-      
-      // Handle different types of errors appropriately
-      if (error.message && error.message.includes("Transaction not found")) {
-        toast({
-          title: "Payment Verification Pending",
-          description: "Your transaction has been submitted but hasn't been confirmed by the network yet. Please wait a moment and click 'Verify Payment' when ready.",
-        });
-        
-        // Show verification option instead of proceeding
-        setAwaitingVerification(true);
-      } else {
-        toast({
-          title: "Payment Failed",
-          description: error.message || "Failed to process payment. Please try again.",
-          variant: "destructive",
-        });
-      }
+      toast({
+        title: "Payment Failed",
+        description: error.message || "Failed to process payment. Please try again.",
+        variant: "destructive",
+      });
     } finally {
       setIsProcessing(false);
     }
@@ -274,61 +163,28 @@ export default function PaymentSection() {
       </div>
       
       <div className="text-center">
-        {awaitingVerification ? (
-          <div className="space-y-4">
-            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-amber-800 text-sm">
-              <div className="flex items-start">
-                <span className="material-icons text-amber-500 mr-2">pending</span>
-                <div>
-                  <p className="font-medium">Transaction Pending</p>
-                  <p className="mt-1">Your transaction has been submitted but hasn't been confirmed yet. This usually takes 30-60 seconds on the LUKSO network.</p>
-                  <p className="mt-1">Transaction hash: <span className="font-mono text-xs">{transactionHash.substring(0, 10)}...{transactionHash.substring(transactionHash.length - 8)}</span></p>
-                </div>
-              </div>
-            </div>
-            
-            <Button
-              onClick={handleVerifyPayment}
-              disabled={isProcessing}
-              className="bg-amber-600 hover:bg-amber-700 text-white px-6 py-3 rounded font-semibold flex items-center mx-auto transition-all"
-            >
-              {isProcessing ? (
-                <>
-                  <span className="material-icons mr-2 animate-spin">autorenew</span>
-                  Verifying...
-                </>
-              ) : (
-                <>
-                  <span className="material-icons mr-2">check_circle</span>
-                  Verify Payment
-                </>
-              )}
-            </Button>
-          </div>
-        ) : (
-          <Button
-            onClick={handlePayment}
-            disabled={isProcessing || isLoadingPrice}
-            className="bg-primary hover:bg-opacity-90 text-white px-6 py-3 rounded font-semibold flex items-center mx-auto transition-all glow"
-          >
-            {isProcessing ? (
-              <>
-                <span className="material-icons mr-2 animate-spin">autorenew</span>
-                Processing...
-              </>
-            ) : isLoadingPrice ? (
-              <>
-                <span className="material-icons mr-2 animate-spin">autorenew</span>
-                Loading price...
-              </>
-            ) : (
-              <>
-                <span className="material-icons mr-2">credit_score</span>
-                Pay {paymentAmount} LYX
-              </>
-            )}
-          </Button>
-        )}
+        <Button
+          onClick={handlePayment}
+          disabled={isProcessing || isLoadingPrice}
+          className="bg-primary hover:bg-opacity-90 text-white px-6 py-3 rounded font-semibold flex items-center mx-auto transition-all glow"
+        >
+          {isProcessing ? (
+            <>
+              <span className="material-icons mr-2 animate-spin">autorenew</span>
+              Processing...
+            </>
+          ) : isLoadingPrice ? (
+            <>
+              <span className="material-icons mr-2 animate-spin">autorenew</span>
+              Loading price...
+            </>
+          ) : (
+            <>
+              <span className="material-icons mr-2">credit_score</span>
+              Pay {paymentAmount} LYX
+            </>
+          )}
+        </Button>
       </div>
     </div>
   );
