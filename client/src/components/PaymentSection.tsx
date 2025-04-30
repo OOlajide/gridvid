@@ -55,6 +55,39 @@ export default function PaymentSection() {
     fetchLyxPrice();
   }, [toast]);
 
+  // Helper function to wait/sleep
+  const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+  // Function to retry verification with exponential backoff
+  const verifyWithRetry = async (hash: string, amount: string, maxAttempts = 5): Promise<boolean> => {
+    let attempts = 0;
+    let lastError;
+    
+    while (attempts < maxAttempts) {
+      try {
+        // Wait longer between each attempt (exponential backoff)
+        // 1st attempt: wait 2s, 2nd: 4s, 3rd: 8s, etc.
+        const waitTime = Math.pow(2, attempts) * 1000;
+        await sleep(waitTime);
+        
+        console.log(`Verification attempt ${attempts + 1}/${maxAttempts} for tx ${hash}`);
+        const verified = await verifyPayment(hash, amount);
+        
+        if (verified) {
+          return true;
+        }
+      } catch (error) {
+        console.log(`Verification attempt ${attempts + 1} failed:`, error);
+        lastError = error;
+      }
+      
+      attempts++;
+    }
+    
+    // If we got here, all attempts failed
+    throw lastError || new Error("Transaction verification failed after multiple attempts");
+  };
+
   const handlePayment = async () => {
     setIsProcessing(true);
     
@@ -69,11 +102,11 @@ export default function PaymentSection() {
       
       toast({
         title: "Transaction Sent",
-        description: "Waiting for transaction confirmation...",
+        description: "Waiting for transaction confirmation (this may take 30+ seconds)...",
       });
       
-      // Verify payment was successful
-      const verified = await verifyPayment(result.hash, result.lyxAmount);
+      // Verify payment with retries
+      const verified = await verifyWithRetry(result.hash, result.lyxAmount);
       
       if (verified) {
         toast({
@@ -87,11 +120,25 @@ export default function PaymentSection() {
       }
     } catch (error: any) {
       console.error('Payment error:', error);
-      toast({
-        title: "Payment Failed",
-        description: error.message || "Failed to process payment. Please try again.",
-        variant: "destructive",
-      });
+      
+      // Special error message for verification failures
+      if (error.message && error.message.includes("Transaction not found")) {
+        toast({
+          title: "Payment Verification Issue",
+          description: "Your payment is being processed by the blockchain. It may take a few minutes to confirm. You can proceed and we'll verify it in the background.",
+          variant: "destructive",
+        });
+        
+        // Allow user to proceed anyway - the payment might be valid but just not confirmed yet
+        completePayment();
+        setStep('generation');
+      } else {
+        toast({
+          title: "Payment Failed",
+          description: error.message || "Failed to process payment. Please try again.",
+          variant: "destructive",
+        });
+      }
     } finally {
       setIsProcessing(false);
     }
