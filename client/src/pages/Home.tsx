@@ -1,0 +1,146 @@
+import { useEffect, useState } from "react";
+import WalletConnector from "@/components/WalletConnector";
+import WorkflowStepper from "@/components/WorkflowStepper";
+import VideoGenerator from "@/components/VideoGenerator";
+import PaymentSection from "@/components/PaymentSection";
+import ProcessingSection from "@/components/ProcessingSection";
+import ResultSection from "@/components/ResultSection";
+import { useWorkflow } from "@/hooks/use-workflow";
+import { Card } from "@/components/ui/card";
+
+export default function Home() {
+  const { 
+    currentStep, 
+    walletConnected, 
+    paymentComplete, 
+    contextAccounts, 
+    allowedAccounts,
+    videoResult,
+    setStep
+  } = useWorkflow();
+
+  return (
+    <div className="flex flex-col min-h-screen">
+      {/* Header */}
+      <header className="px-4 py-4 shadow-lg bg-surface">
+        <div className="container mx-auto flex justify-between items-center">
+          <div className="flex items-center">
+            <span className="material-icons text-primary mr-2">movie_filter</span>
+            <h1 className="font-display text-xl font-bold tracking-wide">
+              <span className="text-primary">LUKSO</span>
+              <span className="text-white">Vision</span>
+            </h1>
+          </div>
+          
+          <WalletConnector />
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <main className="flex-grow px-4 py-8">
+        <div className="container mx-auto max-w-5xl">
+          
+          {/* App Intro */}
+          <div className="text-center mb-10">
+            <h1 className="font-display text-4xl font-bold mb-3 bg-gradient-to-r from-primary to-secondary inline-block text-transparent bg-clip-text">
+              AI Video Generation
+            </h1>
+            <p className="text-text-secondary max-w-2xl mx-auto">
+              Generate stunning AI-powered videos from text or images using your LUKSO Universal Profile.
+            </p>
+          </div>
+
+          {/* App workflow container */}
+          <div className="relative z-10">
+            <WorkflowStepper />
+
+            {/* Workflow Sections */}
+            <div className="workflow-container space-y-8">
+              
+              {/* 1. Connect Wallet Section */}
+              {currentStep === 'connect' && (
+                <Card className="p-6 bg-surface shadow-lg gradient-border">
+                  <h2 className="font-display text-2xl font-semibold mb-4 flex items-center">
+                    <span className="material-icons text-primary mr-2">link</span>
+                    Connect Your Universal Profile
+                  </h2>
+                  <p className="text-text-secondary mb-6">
+                    Connect your LUKSO Universal Profile to create AI-generated videos and store them securely.
+                  </p>
+                  
+                  <div className="flex flex-col md:flex-row items-center justify-center gap-6 py-4">
+                    <div className="bg-background p-4 rounded-lg max-w-sm w-full">
+                      <div className="flex items-center mb-2">
+                        <span className="material-icons text-accent mr-2">security</span>
+                        <h3 className="font-medium">Secure Connection</h3>
+                      </div>
+                      <p className="text-text-secondary text-sm">
+                        Your wallet connects securely to our platform using the UP Provider.
+                      </p>
+                    </div>
+                    
+                    <div className="bg-background p-4 rounded-lg max-w-sm w-full">
+                      <div className="flex items-center mb-2">
+                        <span className="material-icons text-accent mr-2">storage</span>
+                        <h3 className="font-medium">IPFS Storage</h3>
+                      </div>
+                      <p className="text-text-secondary text-sm">
+                        Your generated videos are stored on IPFS for decentralized access.
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div className="mt-6 text-center">
+                    <WalletConnector buttonStyle="large" />
+                  </div>
+                </Card>
+              )}
+
+              {/* 2. Payment Section */}
+              {currentStep === 'payment' && <PaymentSection />}
+
+              {/* 3. Generation Input Section */}
+              {currentStep === 'generation' && <VideoGenerator />}
+
+              {/* 4. Processing Section */}
+              {currentStep === 'processing' && <ProcessingSection />}
+
+              {/* 5. Result Section */}
+              {currentStep === 'result' && videoResult && (
+                <ResultSection video={videoResult} onNewGeneration={() => setStep('generation')} />
+              )}
+            </div>
+          </div>
+        </div>
+      </main>
+
+      {/* Footer */}
+      <footer className="mt-auto py-6 bg-background">
+        <div className="container mx-auto px-4">
+          <div className="flex flex-col md:flex-row justify-between items-center">
+            <div className="flex items-center">
+              <span className="material-icons text-primary text-sm mr-1">movie_filter</span>
+              <span className="text-text-secondary text-sm">LUKSOVision | AI Video Generator</span>
+            </div>
+            <div className="flex space-x-4 mt-4 md:mt-0">
+              <a 
+                href="https://docs.lukso.tech/guides/universal-profile/browser-extension/" 
+                target="_blank" 
+                className="text-text-secondary hover:text-text-primary text-sm"
+              >
+                UP Extension Guide
+              </a>
+              <a 
+                href="https://docs.lukso.tech/" 
+                target="_blank" 
+                className="text-text-secondary hover:text-text-primary text-sm"
+              >
+                LUKSO Docs
+              </a>
+            </div>
+          </div>
+        </div>
+      </footer>
+    </div>
+  );
+}
