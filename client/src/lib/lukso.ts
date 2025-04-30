@@ -8,6 +8,26 @@ import {
   parseEther,
   PublicClient
 } from "viem";
+// Define the LUKSO testnet chain
+const luksoTestnet = {
+  id: 4201,
+  name: 'LUKSO Testnet',
+  network: 'lukso-testnet',
+  nativeCurrency: {
+    decimals: 18,
+    name: 'LYX',
+    symbol: 'LYX',
+  },
+  rpcUrls: {
+    default: { http: ['https://rpc.testnet.lukso.network'] },
+    public: { http: ['https://rpc.testnet.lukso.network'] },
+  },
+  blockExplorers: {
+    default: { name: 'LUKSO Testnet Explorer', url: 'https://explorer.testnet.lukso.network' },
+  },
+} as const;
+
+// Import mainnet chain but using testnet by default
 import { lukso } from "viem/chains";
 
 // LUKSO payment address (should be configurable via environment in a real app)
@@ -31,13 +51,13 @@ export const provider = createClientUPProvider();
 
 // Create wallet client to connect to provider
 export const walletClient = createWalletClient({
-  chain: lukso,
+  chain: luksoTestnet,
   transport: custom(provider),
 });
 
 // Create public client for read operations
 export const publicClient = createPublicClient({
-  chain: lukso,
+  chain: luksoTestnet,
   transport: http(),
 });
 
