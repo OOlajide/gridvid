@@ -12,8 +12,10 @@ import { lukso } from "viem/chains";
 
 // LUKSO payment address (should be configurable via environment in a real app)
 export const PAYMENT_ADDRESS = "0x742EF7A92e633465fC005c8D12F3B8C17A43AB4f";
-// Payment amount in LYX
-export const PAYMENT_AMOUNT = "5";
+// Default payment amount in LYX (used as fallback if price fetch fails)
+export const DEFAULT_PAYMENT_AMOUNT = "5";
+// Target payment amount in USD
+export const TARGET_USD_AMOUNT = 3;
 
 export interface UniversalProfile {
   provider: any;
@@ -60,7 +62,33 @@ export async function initializeUPProvider(): Promise<UniversalProfile> {
   }
 }
 
-export async function makePayment(): Promise<string> {
+// Function to fetch LYX price from our API
+async function fetchLYXPrice(): Promise<number> {
+  try {
+    const response = await fetch('/api/price/lyx');
+    if (!response.ok) {
+      throw new Error(`Failed to fetch LYX price: ${response.statusText}`);
+    }
+    const data = await response.json();
+    return data.price;
+  } catch (error) {
+    console.error('Error fetching LYX price:', error);
+    throw error;
+  }
+}
+
+// Function to calculate LYX amount based on USD target
+function calculateLYXAmount(lyxPriceUSD: number): string {
+  // Calculate how much LYX is needed for TARGET_USD_AMOUNT
+  const lyxAmount = TARGET_USD_AMOUNT / lyxPriceUSD;
+  
+  // Round to 2 decimal places
+  const roundedAmount = Math.round(lyxAmount * 100) / 100;
+  
+  return roundedAmount.toString();
+}
+
+export async function makePayment(): Promise<{hash: string, lyxAmount: string, lyxPrice: number}> {
   try {
     const accounts = provider.accounts as Array<`0x${string}`>;
     
@@ -68,8 +96,22 @@ export async function makePayment(): Promise<string> {
       throw new Error("No accounts available");
     }
 
+    // Fetch current LYX price in USD
+    let lyxPrice: number;
+    let paymentAmount: string;
+    
+    try {
+      lyxPrice = await fetchLYXPrice();
+      paymentAmount = calculateLYXAmount(lyxPrice);
+      console.log(`Current LYX price: $${lyxPrice}, Payment amount: ${paymentAmount} LYX`);
+    } catch (error) {
+      console.warn("Failed to fetch LYX price, using default amount:", error);
+      lyxPrice = 0; // Unknown price
+      paymentAmount = DEFAULT_PAYMENT_AMOUNT;
+    }
+
     // Convert LYX to Wei (LYX has 18 decimals like ETH)
-    const paymentAmountWei = parseEther(PAYMENT_AMOUNT);
+    const paymentAmountWei = parseEther(paymentAmount);
 
     // Send transaction
     const hash = await walletClient.sendTransaction({
@@ -81,14 +123,21 @@ export async function makePayment(): Promise<string> {
     // Log the transaction hash
     console.log("Transaction sent:", hash);
 
-    return hash;
+    return {
+      hash,
+      lyxAmount: paymentAmount,
+      lyxPrice
+    };
   } catch (error) {
     console.error("Payment error:", error);
     throw error;
   }
 }
 
-export async function verifyPayment(transactionHash: string): Promise<boolean> {
+export async function verifyPayment(
+  transactionHash: string, 
+  expectedAmount?: string
+): Promise<boolean> {
   try {
     if (!publicClient) {
       throw new Error("Provider not initialized");
@@ -108,7 +157,7 @@ export async function verifyPayment(transactionHash: string): Promise<boolean> {
       throw new Error("Transaction failed");
     }
 
-    // Verify correct payment amount and recipient
+    // Verify correct recipient
     const tx = await publicClient.getTransaction({
       hash: transactionHash as `0x${string}`,
     });
@@ -116,9 +165,6 @@ export async function verifyPayment(transactionHash: string): Promise<boolean> {
     if (!tx) {
       throw new Error("Transaction details not found");
     }
-
-    const txValue = formatEther(tx.value);
-    const expectedValue = PAYMENT_AMOUNT;
     
     if (!tx.to) {
       throw new Error("Transaction recipient is missing");
@@ -127,12 +173,22 @@ export async function verifyPayment(transactionHash: string): Promise<boolean> {
     const recipient = tx.to.toLowerCase();
     const expectedRecipient = PAYMENT_ADDRESS.toLowerCase();
 
-    if (parseFloat(txValue) !== parseFloat(expectedValue)) {
-      throw new Error(`Incorrect payment amount: ${txValue} LYX, expected: ${expectedValue} LYX`);
-    }
-
     if (recipient !== expectedRecipient) {
       throw new Error(`Incorrect payment recipient: ${recipient}, expected: ${expectedRecipient}`);
+    }
+
+    // If an expected amount was provided, verify the payment amount
+    if (expectedAmount) {
+      const txValue = formatEther(tx.value);
+      
+      // Using approximate comparison to handle floating point precision issues
+      const txValueFloat = parseFloat(txValue);
+      const expectedValueFloat = parseFloat(expectedAmount);
+      
+      // Allow for a small margin of error (0.01 LYX)
+      if (Math.abs(txValueFloat - expectedValueFloat) > 0.01) {
+        throw new Error(`Incorrect payment amount: ${txValue} LYX, expected: ${expectedAmount} LYX`);
+      }
     }
 
     return true;

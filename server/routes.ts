@@ -15,6 +15,7 @@ import fs from "fs";
 import crypto from "crypto";
 import fetch from "node-fetch";
 import FormData from "form-data";
+import axios from "axios";
 
 // Configure multer for file uploads
 const upload = multer({
@@ -239,6 +240,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error("LSP storage error:", error);
       return res.status(500).json({ message: error.message || "Failed to store LSP metadata" });
+    }
+  });
+  
+  // LYX price endpoint - fetch current price from CoinMarketCap
+  app.get("/api/price/lyx", async (req: Request, res: Response) => {
+    try {
+      const API_KEY = process.env.COINMARKETCAP_API_KEY;
+      
+      if (!API_KEY) {
+        throw new Error("CoinMarketCap API key is not configured");
+      }
+      
+      // Make request to CoinMarketCap API
+      const response = await axios.get('https://pro-api.coinmarketcap.com/v2/cryptocurrency/quotes/latest', {
+        params: {
+          slug: 'lukso-network',
+          convert: 'USD'
+        },
+        headers: {
+          'X-CMC_PRO_API_KEY': API_KEY
+        }
+      });
+      
+      if (!response.data || !response.data.data) {
+        throw new Error("Invalid response from CoinMarketCap API");
+      }
+      
+      // Extract the LYX price
+      const luksoData = response.data.data[Object.keys(response.data.data)[0]];
+      if (!luksoData || !luksoData.quote || !luksoData.quote.USD) {
+        throw new Error("LYX price data not found in API response");
+      }
+      
+      const price = luksoData.quote.USD.price;
+      
+      return res.status(200).json({
+        price,
+        symbol: luksoData.symbol,
+        lastUpdated: luksoData.quote.USD.last_updated
+      });
+    } catch (error: any) {
+      console.error("Error fetching LYX price:", error);
+      return res.status(500).json({ 
+        message: error.message || "Failed to fetch LYX price",
+        error: error.toString()
+      });
     }
   });
 
