@@ -274,28 +274,61 @@ export default function PaymentSection() {
       </div>
       
       <div className="text-center">
-        <Button
-          onClick={handlePayment}
-          disabled={isProcessing || isLoadingPrice}
-          className="bg-primary hover:bg-opacity-90 text-white px-6 py-3 rounded font-semibold flex items-center mx-auto transition-all glow"
-        >
-          {isProcessing ? (
-            <>
-              <span className="material-icons mr-2 animate-spin">autorenew</span>
-              Processing...
-            </>
-          ) : isLoadingPrice ? (
-            <>
-              <span className="material-icons mr-2 animate-spin">autorenew</span>
-              Loading price...
-            </>
-          ) : (
-            <>
-              <span className="material-icons mr-2">credit_score</span>
-              Pay {paymentAmount} LYX
-            </>
-          )}
-        </Button>
+        {awaitingVerification ? (
+          <div className="space-y-4">
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-amber-800 text-sm">
+              <div className="flex items-start">
+                <span className="material-icons text-amber-500 mr-2">pending</span>
+                <div>
+                  <p className="font-medium">Transaction Pending</p>
+                  <p className="mt-1">Your transaction has been submitted but hasn't been confirmed yet. This usually takes 30-60 seconds on the LUKSO network.</p>
+                  <p className="mt-1">Transaction hash: <span className="font-mono text-xs">{transactionHash.substring(0, 10)}...{transactionHash.substring(transactionHash.length - 8)}</span></p>
+                </div>
+              </div>
+            </div>
+            
+            <Button
+              onClick={handleVerifyPayment}
+              disabled={isProcessing}
+              className="bg-amber-600 hover:bg-amber-700 text-white px-6 py-3 rounded font-semibold flex items-center mx-auto transition-all"
+            >
+              {isProcessing ? (
+                <>
+                  <span className="material-icons mr-2 animate-spin">autorenew</span>
+                  Verifying...
+                </>
+              ) : (
+                <>
+                  <span className="material-icons mr-2">check_circle</span>
+                  Verify Payment
+                </>
+              )}
+            </Button>
+          </div>
+        ) : (
+          <Button
+            onClick={handlePayment}
+            disabled={isProcessing || isLoadingPrice}
+            className="bg-primary hover:bg-opacity-90 text-white px-6 py-3 rounded font-semibold flex items-center mx-auto transition-all glow"
+          >
+            {isProcessing ? (
+              <>
+                <span className="material-icons mr-2 animate-spin">autorenew</span>
+                Processing...
+              </>
+            ) : isLoadingPrice ? (
+              <>
+                <span className="material-icons mr-2 animate-spin">autorenew</span>
+                Loading price...
+              </>
+            ) : (
+              <>
+                <span className="material-icons mr-2">credit_score</span>
+                Pay {paymentAmount} LYX
+              </>
+            )}
+          </Button>
+        )}
       </div>
     </div>
   );
