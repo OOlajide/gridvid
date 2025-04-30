@@ -163,13 +163,13 @@ export async function verifyPayment(
       throw new Error("Provider not initialized");
     }
 
-    // Get transaction receipt
+    // Get transaction receipt - this will throw if the transaction is not yet confirmed
     const receipt = await publicClient.getTransactionReceipt({
       hash: transactionHash as `0x${string}`,
     });
     
     if (!receipt) {
-      throw new Error("Transaction not found");
+      throw new Error("Transaction not found or not yet confirmed");
     }
 
     // Check if transaction was successful
@@ -211,8 +211,18 @@ export async function verifyPayment(
       }
     }
 
+    // All checks passed
     return true;
-  } catch (error) {
+    
+  } catch (error: any) {
+    // If the error is that the transaction is not found or not confirmed yet, 
+    // we want to propagate that specific error to allow polling
+    if (error.message?.includes("not found") || 
+        error.message?.includes("not yet confirmed") ||
+        error.message?.includes("could not be found")) {
+      throw new Error(`Transaction not yet confirmed: ${error.message}`);
+    }
+    
     console.error("Payment verification error:", error);
     throw error;
   }

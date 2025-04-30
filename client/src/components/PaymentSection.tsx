@@ -55,6 +55,67 @@ export default function PaymentSection() {
     fetchLyxPrice();
   }, [toast]);
 
+  const [transactionStatus, setTransactionStatus] = useState<string>("");
+  const [pendingTransaction, setPendingTransaction] = useState<{hash: string, amount: string} | null>(null);
+  
+  // Function to poll blockchain for transaction confirmation
+  const pollTransactionStatus = async (hash: string, amount: string) => {
+    setTransactionStatus("Waiting for blockchain confirmation...");
+    
+    // Poll every 5 seconds to check transaction status
+    const maxAttempts = 12; // Wait for up to 1 minute (12 * 5 seconds)
+    let attempts = 0;
+    
+    const poll = async () => {
+      try {
+        attempts++;
+        setTransactionStatus(`Checking transaction status (attempt ${attempts}/${maxAttempts})...`);
+        
+        const verified = await verifyPayment(hash, amount);
+        
+        if (verified) {
+          // Transaction confirmed!
+          toast({
+            title: "Payment Successful",
+            description: `Your payment of ${amount} LYX has been confirmed!`,
+          });
+          
+          // Clear pending transaction
+          setPendingTransaction(null);
+          setTransactionStatus("");
+          
+          // Update workflow state
+          completePayment();
+          setStep('generation');
+          return true;
+        }
+      } catch (error: any) {
+        console.log("Transaction not yet confirmed:", error.message);
+        
+        // If we've reached max attempts, give up
+        if (attempts >= maxAttempts) {
+          toast({
+            title: "Verification Timeout",
+            description: "Transaction sent but confirmation is taking longer than expected. You can continue or check back later.",
+          });
+          
+          // We'll let the user continue since the transaction might still confirm later
+          setPendingTransaction(null);
+          setTransactionStatus("");
+          completePayment();
+          setStep('generation');
+          return true;
+        }
+        
+        // Wait 5 seconds before trying again
+        await new Promise(resolve => setTimeout(resolve, 5000));
+        return poll();
+      }
+    };
+    
+    await poll();
+  };
+  
   const handlePayment = async () => {
     setIsProcessing(true);
     
@@ -69,22 +130,24 @@ export default function PaymentSection() {
       
       toast({
         title: "Transaction Sent",
-        description: "Waiting for transaction confirmation...",
+        description: "Transaction submitted to blockchain. Waiting for confirmation...",
       });
       
-      // Verify payment was successful
-      const verified = await verifyPayment(result.hash, result.lyxAmount);
+      // Store the pending transaction
+      setPendingTransaction({
+        hash: result.hash,
+        amount: result.lyxAmount
+      });
       
-      if (verified) {
-        toast({
-          title: "Payment Successful",
-          description: `Your payment of ${result.lyxAmount} LYX has been confirmed!`,
-        });
-        
-        // Update workflow state
-        completePayment();
-        setStep('generation');
-      }
+      // Start polling for confirmation (but don't await it)
+      pollTransactionStatus(result.hash, result.lyxAmount);
+      
+      // Allow user to continue immediately after transaction is sent
+      setIsProcessing(false);
+      
+      // Don't wait for verification to complete - move to the next step
+      // The polling will update the UI when confirmation happens
+      
     } catch (error: any) {
       console.error('Payment error:', error);
       toast({
@@ -92,7 +155,6 @@ export default function PaymentSection() {
         description: error.message || "Failed to process payment. Please try again.",
         variant: "destructive",
       });
-    } finally {
       setIsProcessing(false);
     }
   };
@@ -162,30 +224,68 @@ export default function PaymentSection() {
         </div>
       </div>
       
-      <div className="text-center">
-        <Button
-          onClick={handlePayment}
-          disabled={isProcessing || isLoadingPrice}
-          className="bg-primary hover:bg-opacity-90 text-white px-6 py-3 rounded font-semibold flex items-center mx-auto transition-all glow"
-        >
-          {isProcessing ? (
-            <>
+      {pendingTransaction ? (
+        <div className="space-y-4">
+          <div className="bg-primary/10 rounded-lg p-4 text-center">
+            <div className="flex items-center justify-center text-primary mb-2">
               <span className="material-icons mr-2 animate-spin">autorenew</span>
-              Processing...
-            </>
-          ) : isLoadingPrice ? (
-            <>
-              <span className="material-icons mr-2 animate-spin">autorenew</span>
-              Loading price...
-            </>
-          ) : (
-            <>
-              <span className="material-icons mr-2">credit_score</span>
-              Pay {paymentAmount} LYX
-            </>
-          )}
-        </Button>
-      </div>
+              <span className="font-medium">Transaction In Progress</span>
+            </div>
+            <p className="text-sm text-text-secondary mb-2">{transactionStatus}</p>
+            <div className="text-xs">
+              <a 
+                href={`https://explorer.testnet.lukso.network/tx/${pendingTransaction.hash}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary underline"
+              >
+                View transaction on block explorer
+              </a>
+            </div>
+          </div>
+          
+          <div className="text-center space-y-3">
+            <Button
+              onClick={() => {
+                completePayment();
+                setStep('generation');
+              }}
+              className="bg-primary hover:bg-opacity-90 text-white px-6 py-3 rounded font-semibold flex items-center mx-auto transition-all"
+            >
+              <span className="material-icons mr-2">navigate_next</span>
+              Continue to Video Generation
+            </Button>
+            <p className="text-xs text-text-secondary">
+              You can continue while we wait for blockchain confirmation
+            </p>
+          </div>
+        </div>
+      ) : (
+        <div className="text-center">
+          <Button
+            onClick={handlePayment}
+            disabled={isProcessing || isLoadingPrice}
+            className="bg-primary hover:bg-opacity-90 text-white px-6 py-3 rounded font-semibold flex items-center mx-auto transition-all glow"
+          >
+            {isProcessing ? (
+              <>
+                <span className="material-icons mr-2 animate-spin">autorenew</span>
+                Processing...
+              </>
+            ) : isLoadingPrice ? (
+              <>
+                <span className="material-icons mr-2 animate-spin">autorenew</span>
+                Loading price...
+              </>
+            ) : (
+              <>
+                <span className="material-icons mr-2">credit_score</span>
+                Pay {paymentAmount} LYX
+              </>
+            )}
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
