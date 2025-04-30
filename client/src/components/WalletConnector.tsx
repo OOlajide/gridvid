@@ -21,6 +21,7 @@ export default function WalletConnector({ buttonStyle = "default" }: WalletConne
   } = useWorkflow();
   
   const [userAddressShort, setUserAddressShort] = useState<string>("");
+  const [isLuksoInstalled, setIsLuksoInstalled] = useState<boolean>(true);
   
   const connectWallet = useCallback(async () => {
     try {
@@ -44,6 +45,34 @@ export default function WalletConnector({ buttonStyle = "default" }: WalletConne
           description: "Your Universal Profile has been connected successfully!",
         });
       } else {
+        // If in development mode without LUKSO extension, allow bypassing the wallet connection
+        if (import.meta.env.DEV) {
+          // Check if we're using the mock provider (accounts will always be empty)
+          let isMockProvider = false;
+          try {
+            // The real provider will throw an error for an invalid method
+            await up.provider.request({ method: "_isMockProvider" });
+            isMockProvider = true;
+          } catch (e) {
+            // If error, it might be a real provider
+            isMockProvider = false;
+          }
+          
+          if (isMockProvider) {
+            setIsLuksoInstalled(false);
+            toast({
+              title: "Development Mode",
+              description: "LUKSO extension not detected. You can continue without wallet connection in development mode.",
+            });
+            
+            // In development, allow skipping the wallet connection
+            setWalletConnected(true);
+            setStep('payment');
+            setUserAddressShort("0xDEV...MODE");
+            return;
+          }
+        }
+        
         // Setup event listeners if no accounts yet
         const accountsChanged = (accounts: string[]) => {
           setAllowedAccounts(accounts);
@@ -80,11 +109,24 @@ export default function WalletConnector({ buttonStyle = "default" }: WalletConne
       }
     } catch (error: any) {
       console.error('Error connecting wallet:', error);
-      toast({
-        title: "Connection Failed",
-        description: error.message || "Failed to connect Universal Profile",
-        variant: "destructive",
-      });
+      setIsLuksoInstalled(false);
+      
+      if (import.meta.env.DEV) {
+        // In development, show helpful message and allow skipping wallet connection
+        toast({
+          title: "Development Mode",
+          description: "LUKSO extension not detected. Development mode enabled - you can continue without wallet.",
+        });
+        setWalletConnected(true);
+        setStep('payment');
+        setUserAddressShort("0xDEV...MODE");
+      } else {
+        toast({
+          title: "Connection Failed",
+          description: "LUKSO Universal Profile extension not found. Please install it from the LUKSO website.",
+          variant: "destructive",
+        });
+      }
     }
   }, [allowedAccounts, contextAccounts, setAllowedAccounts, setContextAccounts, setStep, setWalletConnected, toast]);
 

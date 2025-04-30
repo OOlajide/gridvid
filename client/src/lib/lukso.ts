@@ -21,7 +21,25 @@ export async function initializeUPProvider(): Promise<UniversalProfile> {
   try {
     // Create the UP provider if not already created
     if (!upProvider) {
-      upProvider = createClientUPProvider();
+      try {
+        upProvider = createClientUPProvider();
+      } catch (error) {
+        console.warn("UP Provider not available. Using mock provider for development.", error);
+        // Create a mock provider for development environment
+        // This allows testing without a LUKSO extension
+        upProvider = {
+          request: async (args: { method: string }) => {
+            if (args.method === "eth_accounts") return [];
+            if (args.method === "eth_chainId") return "0x2a"; // LUKSO Mainnet
+            if (args.method === "_isMockProvider") return true; // Special method to identify mock provider
+            return null;
+          },
+          on: (event: string, callback: any) => {},
+          emit: (event: string, data: any) => {},
+          contextAccounts: []
+        };
+      }
+      
       browserProvider = new ethers.BrowserProvider(upProvider as unknown as ethers.Eip1193Provider);
     }
 
@@ -39,7 +57,7 @@ export async function initializeUPProvider(): Promise<UniversalProfile> {
     };
   } catch (error) {
     console.error("Error initializing UP provider:", error);
-    throw new Error("Failed to initialize UP provider");
+    throw new Error("Failed to initialize UP provider. Make sure you have the LUKSO browser extension installed.");
   }
 }
 
@@ -47,6 +65,20 @@ export async function makePayment(): Promise<string> {
   try {
     if (!upProvider || !browserProvider) {
       throw new Error("Provider not initialized");
+    }
+
+    // Check if we're in development mode with mock provider
+    let isMockProvider = false;
+    try {
+      isMockProvider = await upProvider.request({ method: "_isMockProvider" });
+    } catch (e) {
+      // If error, it's not the mock provider
+    }
+
+    if (isMockProvider && import.meta.env.DEV) {
+      // In development with mock provider, return a fake transaction hash
+      console.log("Development mode: Simulating payment of 5 LYX");
+      return "0x" + Array(64).fill("0").join("") + "dev";
     }
 
     const signer = await browserProvider.getSigner();
@@ -79,6 +111,12 @@ export async function makePayment(): Promise<string> {
 
 export async function verifyPayment(transactionHash: string): Promise<boolean> {
   try {
+    // Check if we're in development mode with a fake transaction hash
+    if (import.meta.env.DEV && transactionHash.endsWith("dev")) {
+      console.log("Development mode: Simulating payment verification");
+      return true;
+    }
+
     if (!browserProvider) {
       throw new Error("Provider not initialized");
     }
