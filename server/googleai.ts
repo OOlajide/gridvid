@@ -7,8 +7,12 @@ import path from "path";
 import { Readable } from "stream";
 import crypto from "crypto";
 
-const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY || "your_google_api_key";
-const genAI = new GoogleGenAI({ apiKey: GOOGLE_API_KEY });
+// Access the Google API key from environment variables
+const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
+if (!GOOGLE_API_KEY) {
+  console.error("WARNING: GOOGLE_API_KEY environment variable is not set");
+}
+const genAI = new GoogleGenAI({ apiKey: GOOGLE_API_KEY as string });
 
 // Configure IPFS gateway
 const IPFS_GATEWAY = "https://gateway.pinata.cloud/ipfs/";

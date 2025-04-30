@@ -1,5 +1,14 @@
 import { createClientUPProvider } from "@lukso/up-provider";
-import { ethers } from "ethers";
+import { 
+  createWalletClient, 
+  createPublicClient, 
+  custom, 
+  http,
+  formatEther,
+  parseEther,
+  PublicClient
+} from "viem";
+import { lukso } from "viem/chains";
 
 // LUKSO payment address (should be configurable via environment in a real app)
 export const PAYMENT_ADDRESS = "0x742EF7A92e633465fC005c8D12F3B8C17A43AB4f";
@@ -8,21 +17,34 @@ export const PAYMENT_AMOUNT = "5";
 
 export interface UniversalProfile {
   provider: any;
-  browserProvider: ethers.BrowserProvider;
+  walletClient: any;
+  publicClient: PublicClient;
   accounts: string[];
   contextAccounts: string[];
   chainId: number;
 }
 
 let upProvider: any = null;
-let browserProvider: ethers.BrowserProvider | null = null;
+let walletClient: any = null;
+let publicClient: PublicClient | null = null;
 
 export async function initializeUPProvider(): Promise<UniversalProfile> {
   try {
     // Create the UP provider if not already created
     if (!upProvider) {
       upProvider = createClientUPProvider();
-      browserProvider = new ethers.BrowserProvider(upProvider as unknown as ethers.Eip1193Provider);
+      
+      // Create wallet client to connect to provider
+      walletClient = createWalletClient({
+        chain: lukso,
+        transport: custom(upProvider),
+      });
+      
+      // Create public client for read operations
+      publicClient = createPublicClient({
+        chain: lukso,
+        transport: http(),
+      });
     }
 
     // Get accounts and chainId
@@ -32,7 +54,8 @@ export async function initializeUPProvider(): Promise<UniversalProfile> {
 
     return {
       provider: upProvider,
-      browserProvider: browserProvider as ethers.BrowserProvider,
+      walletClient,
+      publicClient: publicClient as PublicClient,
       accounts,
       contextAccounts,
       chainId: parseInt(chainId, 16),
@@ -45,11 +68,10 @@ export async function initializeUPProvider(): Promise<UniversalProfile> {
 
 export async function makePayment(): Promise<string> {
   try {
-    if (!upProvider || !browserProvider) {
+    if (!upProvider || !walletClient || !publicClient) {
       throw new Error("Provider not initialized");
     }
 
-    const signer = await browserProvider.getSigner();
     const accounts = await upProvider.request({ method: "eth_accounts" });
     
     if (!accounts || accounts.length === 0) {
@@ -57,20 +79,21 @@ export async function makePayment(): Promise<string> {
     }
 
     // Convert LYX to Wei (LYX has 18 decimals like ETH)
-    const paymentAmountWei = ethers.parseEther(PAYMENT_AMOUNT);
+    const paymentAmountWei = parseEther(PAYMENT_AMOUNT);
 
     // Send transaction
-    const tx = await signer.sendTransaction({
+    const hash = await walletClient.sendTransaction({
+      account: accounts[0],
       to: PAYMENT_ADDRESS,
       value: paymentAmountWei,
     });
 
     // Notify that a transaction was sent (this is mainly for the channel to forward)
-    upProvider.emit('sentTransaction', tx);
+    if (typeof upProvider.emit === 'function') {
+      upProvider.emit('sentTransaction', { hash });
+    }
 
-    // Wait for transaction to be mined
-    const receipt = await tx.wait();
-    return tx.hash;
+    return hash;
   } catch (error) {
     console.error("Payment error:", error);
     throw error;
@@ -79,34 +102,44 @@ export async function makePayment(): Promise<string> {
 
 export async function verifyPayment(transactionHash: string): Promise<boolean> {
   try {
-    if (!browserProvider) {
+    if (!publicClient) {
       throw new Error("Provider not initialized");
     }
 
     // Get transaction receipt
-    const receipt = await browserProvider.getTransactionReceipt(transactionHash);
+    const receipt = await publicClient.getTransactionReceipt({
+      hash: transactionHash as `0x${string}`,
+    });
     
     if (!receipt) {
       throw new Error("Transaction not found");
     }
 
     // Check if transaction was successful
-    if (receipt.status !== 1) {
+    if (receipt.status !== 'success') {
       throw new Error("Transaction failed");
     }
 
     // Verify correct payment amount and recipient
-    const tx = await browserProvider.getTransaction(transactionHash);
+    const tx = await publicClient.getTransaction({
+      hash: transactionHash as `0x${string}`,
+    });
+    
     if (!tx) {
       throw new Error("Transaction details not found");
     }
 
-    const txValue = ethers.formatEther(tx.value);
+    const txValue = formatEther(tx.value);
     const expectedValue = PAYMENT_AMOUNT;
-    const recipient = tx.to?.toLowerCase();
+    
+    if (!tx.to) {
+      throw new Error("Transaction recipient is missing");
+    }
+    
+    const recipient = tx.to.toLowerCase();
     const expectedRecipient = PAYMENT_ADDRESS.toLowerCase();
 
-    if (txValue !== expectedValue) {
+    if (parseFloat(txValue) !== parseFloat(expectedValue)) {
       throw new Error(`Incorrect payment amount: ${txValue} LYX, expected: ${expectedValue} LYX`);
     }
 
