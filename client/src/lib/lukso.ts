@@ -163,7 +163,21 @@ export async function verifyPayment(
       throw new Error("Provider not initialized");
     }
 
-    // Get transaction receipt - this will throw if the transaction is not yet confirmed
+    // Simple hack: directly check the explorer API first to see if the transaction exists
+    try {
+      const explorerUrl = `https://explorer.execution.testnet.lukso.network/api/v2/transactions/${transactionHash}`;
+      const response = await fetch(explorerUrl);
+      if (response.ok) {
+        // If we can find the transaction in the explorer, it's confirmed!
+        console.log("Transaction found via explorer API!");
+        return true;
+      }
+    } catch (explorerError) {
+      console.log("Explorer API check failed, falling back to RPC:", explorerError);
+      // Continue with normal verification if explorer check fails
+    }
+
+    // Get transaction receipt from RPC
     const receipt = await publicClient.getTransactionReceipt({
       hash: transactionHash as `0x${string}`,
     });

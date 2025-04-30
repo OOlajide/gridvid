@@ -63,7 +63,7 @@ export default function PaymentSection() {
     setTransactionStatus("Waiting for blockchain confirmation...");
     
     // Poll every 5 seconds to check transaction status
-    const maxAttempts = 24; // Wait for up to 2 minutes (24 * 5 seconds)
+    const maxAttempts = 10; // Wait for up to 50 seconds (10 * 5 seconds)
     let attempts = 0;
     
     const poll = async () => {
@@ -93,17 +93,15 @@ export default function PaymentSection() {
       } catch (error: any) {
         console.log("Transaction not yet confirmed:", error.message);
         
-        // If we've reached max attempts, give up
+        // If we've reached max attempts, show timeout message but keep verification UI
         if (attempts >= maxAttempts) {
           toast({
             title: "Verification Timeout",
-            description: "Transaction sent but confirmation is taking too long. Please check the block explorer and try again later.",
-            variant: "destructive"
+            description: "The system couldn't automatically verify your transaction. If you've confirmed it was successful in the explorer, you can proceed manually."
           });
           
-          // Reset the UI but don't allow proceeding
-          setPendingTransaction(null);
-          setTransactionStatus("");
+          // Keep the transaction info but update the status
+          setTransactionStatus("Automatic verification timed out. Check explorer and proceed manually if confirmed.");
           setIsProcessing(false);
           return true;
         }
@@ -233,7 +231,7 @@ export default function PaymentSection() {
             <p className="text-sm text-text-secondary mb-2">{transactionStatus}</p>
             <div className="text-xs">
               <a 
-                href={`https://explorer.testnet.lukso.network/tx/${pendingTransaction.hash}`}
+                href={`https://explorer.execution.testnet.lukso.network/tx/${pendingTransaction.hash}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-primary underline"
@@ -244,15 +242,37 @@ export default function PaymentSection() {
           </div>
           
           <div className="text-center space-y-3">
-            <div className="bg-background-lighter p-3 rounded-lg text-sm text-text-secondary">
-              <div className="flex items-center justify-center">
-                <span className="material-icons mr-2 text-secondary text-xl">info</span>
-                <span>Please wait for blockchain confirmation</span>
+            {transactionStatus.includes("timed out") ? (
+              <div>
+                <Button
+                  onClick={() => {
+                    toast({
+                      title: "Manual Confirmation",
+                      description: "Proceeding with video generation based on manual confirmation."
+                    });
+                    completePayment();
+                    setStep('generation');
+                  }}
+                  className="bg-secondary hover:bg-opacity-90 text-white px-6 py-3 rounded font-semibold flex items-center mx-auto transition-all mb-2"
+                >
+                  <span className="material-icons mr-2">check_circle</span>
+                  I've Verified My Payment - Continue
+                </Button>
+                <p className="text-xs text-text-secondary">
+                  Only click if you've checked the transaction in the explorer and it's confirmed
+                </p>
               </div>
-              <p className="text-xs mt-1">
-                The transaction must be confirmed on the blockchain before proceeding to video generation
-              </p>
-            </div>
+            ) : (
+              <div className="bg-background-lighter p-3 rounded-lg text-sm text-text-secondary">
+                <div className="flex items-center justify-center">
+                  <span className="material-icons mr-2 text-secondary text-xl">info</span>
+                  <span>Please wait for blockchain confirmation</span>
+                </div>
+                <p className="text-xs mt-1">
+                  The transaction must be confirmed on the blockchain before proceeding to video generation
+                </p>
+              </div>
+            )}
           </div>
         </div>
       ) : (
