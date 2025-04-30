@@ -11,7 +11,7 @@ import {
 import { lukso } from "viem/chains";
 
 // LUKSO payment address (should be configurable via environment in a real app)
-export const PAYMENT_ADDRESS = "0x742EF7A92e633465fC005c8D12F3B8C17A43AB4f";
+export const PAYMENT_ADDRESS = "0x49A3E8389aF513d629A462bFfBc9D93B3536f088";
 // Default payment amount in LYX (used as fallback if price fetch fails)
 export const DEFAULT_PAYMENT_AMOUNT = "5";
 // Target payment amount in USD
