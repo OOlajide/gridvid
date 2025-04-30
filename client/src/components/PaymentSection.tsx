@@ -17,6 +17,10 @@ export default function PaymentSection() {
   const [lyxPrice, setLyxPrice] = useState<number | null>(null);
   const [paymentAmount, setPaymentAmount] = useState<string>(DEFAULT_PAYMENT_AMOUNT);
   const [isLoadingPrice, setIsLoadingPrice] = useState(true);
+  const [transactionHash, setTransactionHash] = useState<string>("");
+  const [storedPaymentAmount, setStoredPaymentAmount] = useState<string>("");
+  const [awaitingVerification, setAwaitingVerification] = useState(false);
+  const [verificationAttempt, setVerificationAttempt] = useState(0);
 
   // Fetch current LYX price when component mounts
   useEffect(() => {
@@ -88,6 +92,64 @@ export default function PaymentSection() {
     throw lastError || new Error("Transaction verification failed after multiple attempts");
   };
 
+  // Function to manually verify a payment
+  const handleVerifyPayment = async () => {
+    if (!transactionHash || !storedPaymentAmount) {
+      toast({
+        title: "Verification Error",
+        description: "Missing transaction information. Please try making the payment again.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setIsProcessing(true);
+    setVerificationAttempt(prev => prev + 1);
+    
+    try {
+      toast({
+        title: "Verifying Payment",
+        description: "Checking transaction confirmation...",
+      });
+      
+      // Try to verify the transaction
+      const verified = await verifyPayment(transactionHash, storedPaymentAmount);
+      
+      if (verified) {
+        toast({
+          title: "Payment Successful",
+          description: `Your payment of ${storedPaymentAmount} LYX has been confirmed!`,
+        });
+        
+        // Update workflow state
+        completePayment();
+        setStep('generation');
+        
+        // Reset verification state
+        setAwaitingVerification(false);
+        setTransactionHash("");
+        setStoredPaymentAmount("");
+      }
+    } catch (error: any) {
+      console.error('Verification error:', error);
+      
+      if (verificationAttempt >= 4) {
+        toast({
+          title: "Verification Failed",
+          description: "We couldn't verify your payment after multiple attempts. The transaction may have failed or is taking too long to process.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Verification Pending",
+          description: "Your transaction is still being processed by the blockchain. Please wait a few more moments and try verifying again.",
+        });
+      }
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   const handlePayment = async () => {
     setIsProcessing(true);
     
@@ -99,6 +161,10 @@ export default function PaymentSection() {
       });
       
       const result = await makePayment();
+      
+      // Store the payment amount and transaction hash for later verification if needed
+      setStoredPaymentAmount(result.lyxAmount);
+      setTransactionHash(result.hash);
       
       toast({
         title: "Transaction Sent",
@@ -121,17 +187,15 @@ export default function PaymentSection() {
     } catch (error: any) {
       console.error('Payment error:', error);
       
-      // Special error message for verification failures
+      // Handle different types of errors appropriately
       if (error.message && error.message.includes("Transaction not found")) {
         toast({
-          title: "Payment Verification Issue",
-          description: "Your payment is being processed by the blockchain. It may take a few minutes to confirm. You can proceed and we'll verify it in the background.",
-          variant: "destructive",
+          title: "Payment Verification Pending",
+          description: "Your transaction has been submitted but hasn't been confirmed by the network yet. Please wait a moment and click 'Verify Payment' when ready.",
         });
         
-        // Allow user to proceed anyway - the payment might be valid but just not confirmed yet
-        completePayment();
-        setStep('generation');
+        // Show verification option instead of proceeding
+        setAwaitingVerification(true);
       } else {
         toast({
           title: "Payment Failed",
