@@ -40,7 +40,7 @@ export const insertVideoSchema = createInsertSchema(videos)
 
 export const generateVideoSchema = z.object({
   prompt: z.string().min(2).max(500),
-  aspectRatio: z.enum(["16:9", "9:16", "1:1", "4:3"]),
+  aspectRatio: z.enum(["16:9", "9:16"]),
   generationType: z.enum(["text", "image"]),
   imageBase64: z.string().optional(),
 });

@@ -14,8 +14,8 @@ export default function VideoGenerator() {
   const [generationMethod, setGenerationMethod] = useState<'text' | 'image'>('text');
   const [promptText, setPromptText] = useState("");
   const [imagePromptText, setImagePromptText] = useState("");
-  const [aspectRatio, setAspectRatio] = useState("16:9");
-  const [imageAspectRatio, setImageAspectRatio] = useState("16:9");
+  const [aspectRatio, setAspectRatio] = useState<"16:9" | "9:16">("16:9");
+  const [imageAspectRatio, setImageAspectRatio] = useState<"16:9" | "9:16">("16:9");
   const [uploadedImage, setUploadedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   
@@ -183,7 +183,7 @@ export default function VideoGenerator() {
             <Label className="block text-sm font-medium mb-2">Aspect Ratio</Label>
             <RadioGroup 
               value={aspectRatio} 
-              onValueChange={setAspectRatio}
+              onValueChange={(value) => setAspectRatio(value as "16:9" | "9:16")}
               className="flex space-x-3"
             >
               <div className="flex items-center">
@@ -194,14 +194,7 @@ export default function VideoGenerator() {
                 <RadioGroupItem value="9:16" id="r2" className="accent-primary mr-2" />
                 <Label htmlFor="r2">9:16</Label>
               </div>
-              <div className="flex items-center">
-                <RadioGroupItem value="1:1" id="r3" className="accent-primary mr-2" />
-                <Label htmlFor="r3">1:1</Label>
-              </div>
-              <div className="flex items-center">
-                <RadioGroupItem value="4:3" id="r4" className="accent-primary mr-2" />
-                <Label htmlFor="r4">4:3</Label>
-              </div>
+
             </RadioGroup>
           </div>
         </div>
@@ -274,8 +267,8 @@ export default function VideoGenerator() {
           <div className="mb-6">
             <Label className="block text-sm font-medium mb-2">Aspect Ratio</Label>
             <RadioGroup 
-              value={imageAspectRatio} 
-              onValueChange={setImageAspectRatio}
+              value={imageAspectRatio}
+              onValueChange={(value) => setImageAspectRatio(value as "16:9" | "9:16")}
               className="flex space-x-3"
             >
               <div className="flex items-center">
@@ -285,14 +278,6 @@ export default function VideoGenerator() {
               <div className="flex items-center">
                 <RadioGroupItem value="9:16" id="ir2" className="accent-primary mr-2" />
                 <Label htmlFor="ir2">9:16</Label>
-              </div>
-              <div className="flex items-center">
-                <RadioGroupItem value="1:1" id="ir3" className="accent-primary mr-2" />
-                <Label htmlFor="ir3">1:1</Label>
-              </div>
-              <div className="flex items-center">
-                <RadioGroupItem value="4:3" id="ir4" className="accent-primary mr-2" />
-                <Label htmlFor="ir4">4:3</Label>
               </div>
             </RadioGroup>
           </div>

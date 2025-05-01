@@ -84,7 +84,7 @@ export default function ProcessingSection() {
         Generating Your Video
       </h2>
       <p className="text-text-secondary mb-6">
-        {processingStatus || "Creating your amazing video. This typically takes 2-3 minutes."}
+        {processingStatus || "Creating your amazing video. This typically takes 1 minute."}
       </p>
       
       {/* Progress Indicator */}
