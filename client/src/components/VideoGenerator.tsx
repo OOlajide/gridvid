@@ -16,6 +16,8 @@ export default function VideoGenerator() {
   const [imagePromptText, setImagePromptText] = useState("");
   const [aspectRatio, setAspectRatio] = useState<"16:9" | "9:16">("16:9");
   const [imageAspectRatio, setImageAspectRatio] = useState<"16:9" | "9:16">("16:9");
+  const [videoDuration, setVideoDuration] = useState<number>(5);
+  const [imageVideoDuration, setImageVideoDuration] = useState<number>(5);
   const [uploadedImage, setUploadedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   
@@ -86,7 +88,8 @@ export default function VideoGenerator() {
         setGenerationParams({
           prompt: promptText,
           aspectRatio,
-          generationType: 'text'
+          generationType: 'text',
+          durationSeconds: videoDuration
         });
         
         // Move to payment step
@@ -114,6 +117,7 @@ export default function VideoGenerator() {
             prompt: imagePromptText || "Generate a video based on this image",
             aspectRatio: imageAspectRatio,
             generationType: 'image',
+            durationSeconds: imageVideoDuration,
             imageBase64
           });
           
@@ -202,7 +206,32 @@ export default function VideoGenerator() {
                 <RadioGroupItem value="9:16" id="r2" className="accent-primary mr-2" />
                 <Label htmlFor="r2">9:16</Label>
               </div>
-
+            </RadioGroup>
+          </div>
+          
+          <div className="mb-6">
+            <Label className="block text-sm font-medium mb-2">Video Duration (seconds)</Label>
+            <RadioGroup 
+              value={videoDuration.toString()} 
+              onValueChange={(value) => setVideoDuration(parseInt(value))}
+              className="flex space-x-3"
+            >
+              <div className="flex items-center">
+                <RadioGroupItem value="5" id="d1" className="accent-primary mr-2" />
+                <Label htmlFor="d1">5s</Label>
+              </div>
+              <div className="flex items-center">
+                <RadioGroupItem value="6" id="d2" className="accent-primary mr-2" />
+                <Label htmlFor="d2">6s</Label>
+              </div>
+              <div className="flex items-center">
+                <RadioGroupItem value="7" id="d3" className="accent-primary mr-2" />
+                <Label htmlFor="d3">7s</Label>
+              </div>
+              <div className="flex items-center">
+                <RadioGroupItem value="8" id="d4" className="accent-primary mr-2" />
+                <Label htmlFor="d4">8s</Label>
+              </div>
             </RadioGroup>
           </div>
         </div>
@@ -286,6 +315,32 @@ export default function VideoGenerator() {
               <div className="flex items-center">
                 <RadioGroupItem value="9:16" id="ir2" className="accent-primary mr-2" />
                 <Label htmlFor="ir2">9:16</Label>
+              </div>
+            </RadioGroup>
+          </div>
+          
+          <div className="mb-6">
+            <Label className="block text-sm font-medium mb-2">Video Duration (seconds)</Label>
+            <RadioGroup 
+              value={imageVideoDuration.toString()} 
+              onValueChange={(value) => setImageVideoDuration(parseInt(value))}
+              className="flex space-x-3"
+            >
+              <div className="flex items-center">
+                <RadioGroupItem value="5" id="id1" className="accent-primary mr-2" />
+                <Label htmlFor="id1">5s</Label>
+              </div>
+              <div className="flex items-center">
+                <RadioGroupItem value="6" id="id2" className="accent-primary mr-2" />
+                <Label htmlFor="id2">6s</Label>
+              </div>
+              <div className="flex items-center">
+                <RadioGroupItem value="7" id="id3" className="accent-primary mr-2" />
+                <Label htmlFor="id3">7s</Label>
+              </div>
+              <div className="flex items-center">
+                <RadioGroupItem value="8" id="id4" className="accent-primary mr-2" />
+                <Label htmlFor="id4">8s</Label>
               </div>
             </RadioGroup>
           </div>

@@ -77,7 +77,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      const { prompt, aspectRatio, generationType, imageBase64 } = validationResult.data;
+      const { prompt, aspectRatio, generationType, durationSeconds = 5, imageBase64 } = validationResult.data;
       
       // Generate a unique ID for this generation
       const generationId = crypto.randomUUID();

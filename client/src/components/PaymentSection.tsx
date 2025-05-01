@@ -97,6 +97,7 @@ export default function PaymentSection() {
                 prompt: generationParams.prompt,
                 aspectRatio: generationParams.aspectRatio,
                 generationType: generationParams.generationType,
+                durationSeconds: generationParams.durationSeconds || 5,
                 imageBase64: generationParams.imageBase64
               });
               
@@ -279,6 +280,7 @@ export default function PaymentSection() {
                           prompt: generationParams.prompt,
                           aspectRatio: generationParams.aspectRatio,
                           generationType: generationParams.generationType,
+                          durationSeconds: generationParams.durationSeconds || 5,
                           imageBase64: generationParams.imageBase64
                         });
                         
