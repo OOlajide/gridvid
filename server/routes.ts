@@ -96,6 +96,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         prompt,
         aspectRatio,
         generationType,
+        durationSeconds,
         imageBase64,
         statusCallback: (status) => {
           videoGenerations.set(generationId, status);

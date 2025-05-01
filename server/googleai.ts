@@ -22,6 +22,7 @@ export interface VideoGenerationRequest {
   prompt: string;
   aspectRatio: string;
   generationType: string;
+  durationSeconds: number;
   imageBase64?: string;
   statusCallback?: (status: VideoGenerationStatus) => void;
 }
@@ -36,7 +37,7 @@ export interface VideoGenerationStatus {
 
 // Function to generate video
 export async function generateVideo(req: VideoGenerationRequest): Promise<Video> {
-  const { prompt, aspectRatio, generationType, imageBase64, statusCallback } = req;
+  const { prompt, aspectRatio, generationType, durationSeconds, imageBase64, statusCallback } = req;
   
   try {
     // Update status
@@ -55,7 +56,8 @@ export async function generateVideo(req: VideoGenerationRequest): Promise<Video>
     const config = {
       personGeneration: "allow_adult",
       aspectRatio: aspectRatio,
-      numberOfVideos: 1
+      numberOfVideos: 1,
+      durationSeconds: durationSeconds
     };
     
     // Start video generation operation
@@ -198,13 +200,15 @@ export async function generateVideo(req: VideoGenerationRequest): Promise<Video>
       aspectRatio,
       ipfsCid,
       gatewayUrl, // Use the IPFS gateway URL
-      duration: "8.0 seconds", // Example duration
+      duration: `${durationSeconds}.0 seconds`,
       walletAddress: "0x123456789abcdef", // This would come from the user's wallet
       generationType,
       metadata: { 
         source: "Google Veo AI",
         model: "veo-2.0-generate-001",
-        ipfs: true // Indicate this is on IPFS
+        ipfs: true, // Indicate this is on IPFS
+        duration: durationSeconds,
+        timestamp: Date.now()
       },
     };
     
