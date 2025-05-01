@@ -1,4 +1,4 @@
-import type { Express, Request, Response } from "express";
+import express, { type Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { 
@@ -54,6 +54,9 @@ const PINATA_GATEWAY = "https://gateway.pinata.cloud/ipfs/";
 const videoGenerations = new Map<string, VideoGenerationStatus>();
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Serve video files from the public/videos directory
+  app.use('/videos', express.static(path.join(process.cwd(), 'public', 'videos')));
+  
   // API routes with /api prefix
   
   // Video generation endpoint
@@ -132,6 +135,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error("Error checking generation status:", error);
       return res.status(500).json({ message: error.message || "Failed to check generation status" });
+    }
+  });
+  
+  // Get specific video endpoint
+  app.get("/api/videos/:id", async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      
+      // Get the video from storage
+      const video = await storage.getVideo(parseInt(id));
+      
+      if (!video) {
+        return res.status(404).json({ message: "Video not found" });
+      }
+      
+      return res.status(200).json(video);
+    } catch (error: any) {
+      console.error("Error getting video:", error);
+      return res.status(500).json({ message: error.message || "Failed to get video" });
     }
   });
   

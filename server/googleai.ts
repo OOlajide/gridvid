@@ -178,17 +178,38 @@ export async function generateVideo(req: VideoGenerationRequest): Promise<Video>
       });
     }
     
-    // Now upload to IPFS - in a real app, we'd use the actual IPFS API
-    // For demo purposes, we'll simulate the IPFS upload
-    const ipfsCid = `Qm${crypto.randomBytes(16).toString("hex")}`;
-    const gatewayUrl = `${IPFS_GATEWAY}${ipfsCid}`;
+    // For demo purposes, we'll store the video locally and serve it directly 
+    // instead of using actual IPFS
+    
+    // Create a public directory to serve the videos if it doesn't exist
+    const publicDir = path.join(process.cwd(), "public");
+    const videosDir = path.join(publicDir, "videos");
+    
+    if (!fs.existsSync(publicDir)) {
+      fs.mkdirSync(publicDir, { recursive: true });
+    }
+    if (!fs.existsSync(videosDir)) {
+      fs.mkdirSync(videosDir, { recursive: true });
+    }
+    
+    // Generate a simple ID for the video file
+    const videoId = crypto.randomUUID();
+    const publicVideoFilename = `${videoId}.mp4`;
+    const publicVideoPath = path.join(videosDir, publicVideoFilename);
+    
+    // Copy the video to the public directory
+    fs.copyFileSync(videoPath, publicVideoPath);
+    
+    // Create a URL for accessing the video
+    const videoUrl = `/videos/${publicVideoFilename}`;
+    const ipfsCid = `local-${videoId}`; // We're not using real IPFS but need an ID
     
     // Create video record in database
     const videoData: InsertVideo = {
       prompt,
       aspectRatio,
       ipfsCid,
-      gatewayUrl,
+      gatewayUrl: videoUrl, // Use the local URL instead of IPFS gateway
       duration: "5.0 seconds", // Example duration
       walletAddress: "0x123456789abcdef", // This would come from the user's wallet
       generationType,
@@ -201,7 +222,7 @@ export async function generateVideo(req: VideoGenerationRequest): Promise<Video>
     // Store in database
     const video = await storage.createVideo(videoData);
     
-    // Clean up the temporary file
+    // Clean up the temporary file from uploads directory (but keep the one in public)
     fs.unlinkSync(videoPath);
     
     // Update status to complete
