@@ -27,8 +27,8 @@ export default function Home() {
           <div className="flex items-center">
             <span className="material-icons text-primary mr-2">movie_filter</span>
             <h1 className="font-display text-xl font-bold tracking-wide">
-              <span className="text-primary">LUKSO</span>
-              <span className="text-white">Vision</span>
+              <span className="text-primary">Grid</span>
+              <span className="text-white">Vid</span>
             </h1>
           </div>
           
