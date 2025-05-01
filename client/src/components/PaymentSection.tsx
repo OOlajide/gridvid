@@ -12,7 +12,7 @@ import {
 
 export default function PaymentSection() {
   const { toast } = useToast();
-  const { setStep, completePayment } = useWorkflow();
+  const { setStep, completePayment, generationParams, startVideoGeneration } = useWorkflow();
   const [isProcessing, setIsProcessing] = useState(false);
   const [lyxPrice, setLyxPrice] = useState<number | null>(null);
   const [paymentAmount, setPaymentAmount] = useState<string>(DEFAULT_PAYMENT_AMOUNT);
@@ -87,6 +87,12 @@ export default function PaymentSection() {
           
           // Update workflow state
           completePayment();
+          
+          // Start video generation if we have parameters
+          if (generationParams) {
+            await startVideoGeneration(generationParams);
+          }
+          
           setStep('processing');
           return true;
         }
@@ -233,12 +239,18 @@ export default function PaymentSection() {
             {transactionStatus.includes("timed out") ? (
               <div>
                 <Button
-                  onClick={() => {
+                  onClick={async () => {
                     toast({
                       title: "Manual Confirmation",
                       description: "Proceeding with video generation based on manual confirmation."
                     });
                     completePayment();
+                    
+                    // Start video generation if we have parameters
+                    if (generationParams) {
+                      await startVideoGeneration(generationParams);
+                    }
+                    
                     setStep('processing');
                   }}
                   className="bg-secondary hover:bg-opacity-90 text-white px-6 py-3 rounded font-semibold flex items-center mx-auto transition-all mb-2"

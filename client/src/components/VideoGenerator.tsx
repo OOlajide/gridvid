@@ -68,8 +68,7 @@ export default function VideoGenerator() {
     }
   };
 
-  // Already getting this from the first useWorkflow hook, no need to declare again
-  // const { setGenerationParams } = useWorkflow();
+  // Using the setGenerationParams from the workflow context to store params
   
   const handleGeneration = async () => {
     try {
