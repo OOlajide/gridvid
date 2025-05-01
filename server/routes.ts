@@ -137,39 +137,123 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const testVideoPath = path.join(videosDir, testVideoFilename);
       
       // Create a simple test video file (just copy a sample video if available)
-      // For testing, generate a simple 1px video file
+      // Create temp directory for upload
+      const uploadsDir = path.join(process.cwd(), "uploads");
+      if (!fs.existsSync(uploadsDir)) {
+        fs.mkdirSync(uploadsDir, { recursive: true });
+      }
+      
+      // Create temp file path for uploading to IPFS
+      const tempVideoPath = path.join(uploadsDir, testVideoFilename);
+      
+      // For testing, generate a simple file that resembles MP4 header
       const testFileContent = Buffer.from([
         0x00, 0x00, 0x00, 0x18, 0x66, 0x74, 0x79, 0x70, 0x6D, 0x70, 0x34, 0x32, 
         0x00, 0x00, 0x00, 0x00, 0x6D, 0x70, 0x34, 0x32, 0x69, 0x73, 0x6F, 0x6D
       ]);
       
-      fs.writeFileSync(testVideoPath, testFileContent);
+      // Write to temp location
+      fs.writeFileSync(tempVideoPath, testFileContent);
       
-      // Create video URL
-      const videoUrl = `/videos/${testVideoFilename}`;
+      // Now upload to IPFS via Pinata
+      console.log("Uploading test video to IPFS...");
+      const { uploadToIPFS } = await import('./pinata');
       
-      // Create a test video entry in the database
-      const testVideoData: InsertVideo = {
-        prompt: "Test video",
-        aspectRatio: "16:9",
-        ipfsCid: `local-${testVideoId}`,
-        gatewayUrl: videoUrl,
-        duration: "1.0 seconds",
-        walletAddress: "0x123456789abcdef",
-        generationType: "text",
-        metadata: { 
-          source: "Test",
-          model: "test-1.0" 
-        },
-      };
+      try {
+        // Upload to IPFS
+        const ipfsResult = await uploadToIPFS(tempVideoPath, `lukso-test-video-${Date.now()}.mp4`);
+        console.log("Test video uploaded to IPFS:", ipfsResult);
+        
+        // Clean up temp file
+        fs.unlinkSync(tempVideoPath);
+        
+        // Create a test video entry in the database using IPFS data
+        const testVideoData: InsertVideo = {
+          prompt: "Test video with IPFS storage",
+          aspectRatio: "16:9",
+          ipfsCid: ipfsResult.cid,
+          gatewayUrl: ipfsResult.gatewayUrl,
+          duration: "1.0 seconds",
+          walletAddress: "0x123456789abcdef",
+          generationType: "text",
+          metadata: { 
+            source: "Test",
+            model: "test-1.0",
+            ipfs: true,
+            timestamp: Date.now()
+          },
+        };
+      } catch (ipfsError) {
+        console.error("Failed to upload test video to IPFS:", ipfsError);
+        
+        // Fall back to local storage if IPFS upload fails
+        console.log("Using local file storage as fallback");
+        fs.copyFileSync(tempVideoPath, testVideoPath);
+        
+        // Create a test video entry with local storage
+        const testVideoData: InsertVideo = {
+          prompt: "Test video (local storage fallback)",
+          aspectRatio: "16:9",
+          ipfsCid: `local-${testVideoId}`,
+          gatewayUrl: `/videos/${testVideoFilename}`,
+          duration: "1.0 seconds",
+          walletAddress: "0x123456789abcdef",
+          generationType: "text",
+          metadata: { 
+            source: "Test",
+            model: "test-1.0" 
+          },
+        };
+      }
+      
+      // Define video data based on the try/catch result
+      let finalVideoData: InsertVideo;
+      
+      // Check if we've reached this point from the try block or the catch block
+      if (typeof ipfsResult !== 'undefined') {
+        // This is from the IPFS upload try block
+        finalVideoData = {
+          prompt: "Test video with IPFS storage",
+          aspectRatio: "16:9",
+          ipfsCid: ipfsResult.cid,
+          gatewayUrl: ipfsResult.gatewayUrl,
+          duration: "1.0 seconds",
+          walletAddress: "0x123456789abcdef",
+          generationType: "text",
+          metadata: { 
+            source: "Test",
+            model: "test-1.0",
+            ipfs: true,
+            timestamp: Date.now()
+          },
+        };
+      } else {
+        // This is from the catch block or fallback
+        finalVideoData = {
+          prompt: "Test video (local storage fallback)",
+          aspectRatio: "16:9",
+          ipfsCid: `local-${testVideoId}`,
+          gatewayUrl: `/videos/${testVideoFilename}`,
+          duration: "1.0 seconds",
+          walletAddress: "0x123456789abcdef",
+          generationType: "text",
+          metadata: { 
+            source: "Test",
+            model: "test-1.0" 
+          },
+        };
+      }
       
       // Store in database
-      const video = await storage.createVideo(testVideoData);
+      const video = await storage.createVideo(finalVideoData);
       
       return res.status(200).json({
         message: "Test video created successfully",
         video,
-        videoUrl
+        ipfs: video.ipfsCid.startsWith('baf') ? {
+          cid: video.ipfsCid,
+          gatewayUrl: video.gatewayUrl
+        } : null
       });
     } catch (error: any) {
       console.error("Test video error:", error);

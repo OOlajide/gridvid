@@ -102,7 +102,15 @@ export async function uploadToIPFS(filePath: string, name?: string): Promise<{
  * @returns URL to access the file
  */
 export function getIPFSUrl(cid: string): string {
-  return `https://${PINATA_GATEWAY}/ipfs/${cid}`;
+  // Check if this is a real IPFS CID
+  if (cid.startsWith('baf')) {
+    return `https://${PINATA_GATEWAY}/ipfs/${cid}`;
+  }
+  
+  // Legacy format or local CID
+  return cid.includes('ipfs/')
+    ? cid
+    : `https://${PINATA_GATEWAY}/ipfs/${cid}`;
 }
 
 /**
