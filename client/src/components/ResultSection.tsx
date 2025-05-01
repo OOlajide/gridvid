@@ -15,9 +15,14 @@ export default function ResultSection({ video, onNewGeneration }: ResultSectionP
   
   const handleDownload = async () => {
     try {
+      // Get the full video URL
+      const videoUrl = video.gatewayUrl.startsWith('http') ? 
+        video.gatewayUrl : 
+        `http://localhost:5000${video.gatewayUrl}`;
+      
       // Create an anchor element and trigger download
       const link = document.createElement('a');
-      link.href = video.gatewayUrl;
+      link.href = videoUrl;
       link.download = `lukso-video-${video.id}.mp4`;
       document.body.appendChild(link);
       link.click();
@@ -36,9 +41,14 @@ export default function ResultSection({ video, onNewGeneration }: ResultSectionP
     setIsStoring(true);
     
     try {
+      // Get the full video URL
+      const videoUrl = video.gatewayUrl.startsWith('http') ? 
+        video.gatewayUrl : 
+        `http://localhost:5000${video.gatewayUrl}`;
+      
       await storeLSPMetadata({
         ipfsCid: video.ipfsCid,
-        gatewayUrl: video.gatewayUrl,
+        gatewayUrl: videoUrl,
         prompt: video.prompt,
       });
       
@@ -84,7 +94,7 @@ export default function ResultSection({ video, onNewGeneration }: ResultSectionP
       {/* Video Preview */}
       <div className="mb-6 bg-black rounded-lg overflow-hidden">
         <video controls className="w-full h-auto max-h-[400px]">
-          <source src={video.gatewayUrl} type="video/mp4" />
+          <source src={video.gatewayUrl.startsWith('http') ? video.gatewayUrl : `http://localhost:5000${video.gatewayUrl}`} type="video/mp4" />
           Your browser does not support the video tag.
         </video>
       </div>
@@ -121,14 +131,14 @@ export default function ResultSection({ video, onNewGeneration }: ResultSectionP
               </code>
             </div>
             <div className="flex justify-between">
-              <span className="text-text-secondary">Gateway URL</span>
+              <span className="text-text-secondary">Video URL</span>
               <a 
-                href={video.gatewayUrl} 
+                href={video.gatewayUrl.startsWith('http') ? video.gatewayUrl : `http://localhost:5000${video.gatewayUrl}`}
                 target="_blank" 
                 rel="noopener noreferrer" 
                 className="text-secondary hover:underline"
               >
-                View on IPFS Gateway
+                View Video
               </a>
             </div>
             <div className="flex justify-between">
