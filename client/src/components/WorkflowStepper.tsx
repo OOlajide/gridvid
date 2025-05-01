@@ -8,8 +8,8 @@ interface Step {
 
 const steps: Step[] = [
   { id: 'connect', label: 'Connect', icon: 'check' },
+  { id: 'prompt', label: 'Prompt', icon: 'palette' },
   { id: 'payment', label: 'Payment', icon: 'payments' },
-  { id: 'generation', label: 'Generation', icon: 'palette' },
   { id: 'processing', label: 'Processing', icon: 'autorenew' },
   { id: 'result', label: 'Result', icon: 'movie' }
 ];
@@ -35,8 +35,8 @@ export default function WorkflowStepper() {
     // Completed steps
     if (
       (stepId === 'connect' && walletConnected) ||
+      (stepId === 'prompt' && currentStep !== 'connect') ||
       (stepId === 'payment' && paymentComplete) ||
-      (stepId === 'generation' && isProcessing) ||
       (stepId === 'processing' && hasResult)
     ) {
       return {

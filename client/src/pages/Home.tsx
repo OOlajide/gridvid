@@ -96,18 +96,18 @@ export default function Home() {
                 </Card>
               )}
 
-              {/* 2. Payment Section */}
-              {currentStep === 'payment' && <PaymentSection />}
+              {/* 2. Prompt Input Section */}
+              {currentStep === 'prompt' && <VideoGenerator />}
 
-              {/* 3. Generation Input Section */}
-              {currentStep === 'generation' && <VideoGenerator />}
+              {/* 3. Payment Section */}
+              {currentStep === 'payment' && <PaymentSection />}
 
               {/* 4. Processing Section */}
               {currentStep === 'processing' && <ProcessingSection />}
 
               {/* 5. Result Section */}
               {currentStep === 'result' && videoResult && (
-                <ResultSection video={videoResult} onNewGeneration={() => setStep('generation')} />
+                <ResultSection video={videoResult} onNewGeneration={() => setStep('prompt')} />
               )}
             </div>
           </div>

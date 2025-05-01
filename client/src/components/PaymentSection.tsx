@@ -87,7 +87,7 @@ export default function PaymentSection() {
           
           // Update workflow state
           completePayment();
-          setStep('generation');
+          setStep('processing');
           return true;
         }
       } catch (error: any) {
@@ -239,7 +239,7 @@ export default function PaymentSection() {
                       description: "Proceeding with video generation based on manual confirmation."
                     });
                     completePayment();
-                    setStep('generation');
+                    setStep('processing');
                   }}
                   className="bg-secondary hover:bg-opacity-90 text-white px-6 py-3 rounded font-semibold flex items-center mx-auto transition-all mb-2"
                 >

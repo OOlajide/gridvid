@@ -4,7 +4,7 @@ import { useToast } from "./use-toast";
 import { apiRequest } from "@/lib/queryClient";
 
 // Workflow step types
-type WorkflowStep = 'connect' | 'payment' | 'generation' | 'processing' | 'result';
+type WorkflowStep = 'connect' | 'prompt' | 'payment' | 'processing' | 'result';
 
 // Processing stages for video generation
 interface ProcessingStage {
