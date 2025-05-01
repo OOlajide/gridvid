@@ -24,11 +24,13 @@ interface WorkflowContextProps {
   processingStatus: string;
   currentStageIndex: number;
   generationId: string | null;
+  generationParams: GenerateVideoRequest | null;
   setStep: (step: WorkflowStep) => void;
   setWalletConnected: (connected: boolean) => void;
   setAllowedAccounts: (accounts: string[]) => void;
   setContextAccounts: (accounts: string[]) => void;
   completePayment: () => void;
+  setGenerationParams: (params: GenerateVideoRequest) => void;
   startVideoGeneration: (params: GenerateVideoRequest) => Promise<void>;
   pollGenerationStatus: () => Promise<boolean>;
 }
@@ -49,9 +51,10 @@ export function WorkflowProvider({ children }: { children: ReactNode }) {
   
   // Video generation state
   const [videoResult, setVideoResult] = useState<Video | null>(null);
-  const [processingStatus, setProcessingStatus] = useState("Creating your amazing video. This typically takes 2-3 minutes.");
+  const [processingStatus, setProcessingStatus] = useState("Creating your amazing video. This typically takes 1 minute.");
   const [currentStageIndex, setCurrentStageIndex] = useState(0);
   const [generationId, setGenerationId] = useState<string | null>(null);
+  const [generationParams, setGenerationParams] = useState<GenerateVideoRequest | null>(null);
   
   const handleSetStep = useCallback((step: WorkflowStep) => {
     setCurrentStep(step);
@@ -132,11 +135,13 @@ export function WorkflowProvider({ children }: { children: ReactNode }) {
         processingStatus,
         currentStageIndex,
         generationId,
+        generationParams,
         setStep: handleSetStep,
         setWalletConnected,
         setAllowedAccounts,
         setContextAccounts,
         completePayment,
+        setGenerationParams,
         startVideoGeneration,
         pollGenerationStatus,
       }}

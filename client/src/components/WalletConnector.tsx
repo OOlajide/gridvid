@@ -33,9 +33,9 @@ export default function WalletConnector({ buttonStyle = "default" }: WalletConne
         setUserAddressShort(`${address.slice(0, 6)}...${address.slice(-4)}`);
       }
 
-      // Check if we can proceed to payment
+      // Check if we can proceed to prompt
       if (_accounts.length > 0 && _contextAccounts.length > 0) {
-        setStep('payment');
+        setStep('prompt');
       }
     },
     [setWalletConnected, setStep]

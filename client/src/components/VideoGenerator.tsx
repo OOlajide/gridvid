@@ -9,7 +9,7 @@ import { apiRequest } from "@/lib/queryClient";
 
 export default function VideoGenerator() {
   const { toast } = useToast();
-  const { setStep, startVideoGeneration } = useWorkflow();
+  const { setStep, setGenerationParams } = useWorkflow();
   
   const [generationMethod, setGenerationMethod] = useState<'text' | 'image'>('text');
   const [promptText, setPromptText] = useState("");
@@ -68,6 +68,9 @@ export default function VideoGenerator() {
     }
   };
 
+  // Already getting this from the first useWorkflow hook, no need to declare again
+  // const { setGenerationParams } = useWorkflow();
+  
   const handleGeneration = async () => {
     try {
       if (generationMethod === 'text') {
@@ -80,11 +83,15 @@ export default function VideoGenerator() {
           return;
         }
         
-        await startVideoGeneration({
+        // Save the parameters for after payment
+        setGenerationParams({
           prompt: promptText,
           aspectRatio,
           generationType: 'text'
         });
+        
+        // Move to payment step
+        setStep('payment');
       } else {
         if (!uploadedImage) {
           toast({
@@ -98,21 +105,23 @@ export default function VideoGenerator() {
         // Convert image to base64
         const reader = new FileReader();
         reader.readAsDataURL(uploadedImage);
-        reader.onloadend = async () => {
+        reader.onloadend = () => {
           const base64data = reader.result as string;
           // Remove the data:image/xxx;base64, prefix
           const imageBase64 = base64data.split(',')[1];
           
-          await startVideoGeneration({
+          // Save the parameters for after payment
+          setGenerationParams({
             prompt: imagePromptText || "Generate a video based on this image",
             aspectRatio: imageAspectRatio,
             generationType: 'image',
             imageBase64
           });
+          
+          // Move to payment step
+          setStep('payment');
         };
       }
-      
-      setStep('processing');
     } catch (error: any) {
       toast({
         title: "Generation Failed",
