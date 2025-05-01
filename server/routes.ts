@@ -9,7 +9,7 @@ import {
 } from "./googleai";
 import multer from "multer";
 import { z } from "zod";
-import { generateVideoSchema } from "@shared/schema";
+import { generateVideoSchema, InsertVideo } from "@shared/schema";
 import path from "path";
 import fs from "fs";
 import crypto from "crypto";
@@ -54,8 +54,9 @@ const PINATA_GATEWAY = "https://gateway.pinata.cloud/ipfs/";
 const videoGenerations = new Map<string, VideoGenerationStatus>();
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Serve video files from the public/videos directory
-  app.use('/videos', express.static(path.join(process.cwd(), 'public', 'videos')));
+  // Serve video files from the public/videos directory 
+  const staticDir = path.join(process.cwd(), 'public', 'videos');
+  app.use('/videos', express.static(staticDir));
   
   // API routes with /api prefix
   
@@ -113,6 +114,66 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error("Video generation error:", error);
       return res.status(500).json({ message: error.message || "Failed to generate video" });
+    }
+  });
+  
+  // Test video endpoint (for debugging)
+  app.get("/api/videos/test", async (_req: Request, res: Response) => {
+    try {
+      // Create public directory structure
+      const publicDir = path.join(process.cwd(), "public");
+      const videosDir = path.join(publicDir, "videos");
+      
+      if (!fs.existsSync(publicDir)) {
+        fs.mkdirSync(publicDir, { recursive: true });
+      }
+      if (!fs.existsSync(videosDir)) {
+        fs.mkdirSync(videosDir, { recursive: true });
+      }
+      
+      // Generate a test video ID
+      const testVideoId = "test-" + Date.now();
+      const testVideoFilename = `${testVideoId}.mp4`;
+      const testVideoPath = path.join(videosDir, testVideoFilename);
+      
+      // Create a simple test video file (just copy a sample video if available)
+      // For testing, generate a simple 1px video file
+      const testFileContent = Buffer.from([
+        0x00, 0x00, 0x00, 0x18, 0x66, 0x74, 0x79, 0x70, 0x6D, 0x70, 0x34, 0x32, 
+        0x00, 0x00, 0x00, 0x00, 0x6D, 0x70, 0x34, 0x32, 0x69, 0x73, 0x6F, 0x6D
+      ]);
+      
+      fs.writeFileSync(testVideoPath, testFileContent);
+      
+      // Create video URL
+      const videoUrl = `/videos/${testVideoFilename}`;
+      
+      // Create a test video entry in the database
+      const testVideoData: InsertVideo = {
+        prompt: "Test video",
+        aspectRatio: "16:9",
+        ipfsCid: `local-${testVideoId}`,
+        gatewayUrl: videoUrl,
+        duration: "1.0 seconds",
+        walletAddress: "0x123456789abcdef",
+        generationType: "text",
+        metadata: { 
+          source: "Test",
+          model: "test-1.0" 
+        },
+      };
+      
+      // Store in database
+      const video = await storage.createVideo(testVideoData);
+      
+      return res.status(200).json({
+        message: "Test video created successfully",
+        video,
+        videoUrl
+      });
+    } catch (error: any) {
+      console.error("Test video error:", error);
+      return res.status(500).json({ message: error.message || "Failed to create test video" });
     }
   });
   
