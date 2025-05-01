@@ -226,65 +226,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "No file uploaded" });
       }
       
+      console.log("File uploaded for IPFS:", file.originalname, file.size, "bytes");
+      
       // Get metadata if provided
       let metadata = {};
       if (req.body.metadata) {
         try {
           metadata = JSON.parse(req.body.metadata);
+          console.log("Upload metadata:", metadata);
         } catch (e) {
           console.warn("Invalid metadata JSON:", e);
         }
       }
       
-      // Upload to IPFS via Pinata
-      const form = new FormData();
-      form.append("file", fs.createReadStream(file.path));
-      form.append("pinataMetadata", JSON.stringify({
-        name: `lukso-video-${Date.now()}`,
-      }));
+      // Use our Pinata service for upload
+      const { uploadToIPFS } = await import('./pinata');
       
-      if (Object.keys(metadata).length > 0) {
-        form.append("pinataOptions", JSON.stringify({
-          cidVersion: 1,
-          customPinPolicy: {
-            regions: [
-              {
-                id: "FRA1",
-                desiredReplicationCount: 1
-              },
-              {
-                id: "NYC1",
-                desiredReplicationCount: 1
-              }
-            ]
-          }
-        }));
-      }
+      // Use original filename or create a unique one
+      const filename = (metadata as any).name || file.originalname || `lukso-file-${Date.now()}${path.extname(file.path)}`;
       
-      const pinataResponse = await fetch("https://api.pinata.cloud/pinning/pinFileToIPFS", {
-        method: "POST",
-        headers: {
-          "pinata_api_key": PINATA_API_KEY,
-          "pinata_secret_api_key": PINATA_SECRET_KEY,
-        },
-        body: form,
-      });
-      
-      if (!pinataResponse.ok) {
-        const errorText = await pinataResponse.text();
-        throw new Error(`Pinata upload failed: ${errorText}`);
-      }
-      
-      const pinataResult = await pinataResponse.json();
+      console.log("Uploading to IPFS via Pinata service:", filename);
+      const ipfsResult = await uploadToIPFS(file.path, filename);
       
       // Clean up uploaded file
       fs.unlinkSync(file.path);
       
-      // Return IPFS CID and gateway URL
-      const ipfsHash = (pinataResult as any).IpfsHash;
+      // Return IPFS information
+      console.log("IPFS upload successful:", ipfsResult);
       return res.status(200).json({
-        cid: ipfsHash,
-        gatewayUrl: `${PINATA_GATEWAY}${ipfsHash}`,
+        cid: ipfsResult.cid,
+        gatewayUrl: ipfsResult.gatewayUrl,
+        pinataUrl: ipfsResult.pinataUrl,
+        originalName: file.originalname,
+        size: file.size,
+        mimetype: file.mimetype
       });
     } catch (error: any) {
       console.error("IPFS upload error:", error);
@@ -301,23 +276,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Missing IPFS CID" });
       }
       
+      console.log("Downloading from IPFS:", cid);
+      
+      // Import the getIPFSUrl function from pinata.ts
+      const { getIPFSUrl } = await import('./pinata');
+      
+      // Get the gateway URL
+      const gatewayUrl = getIPFSUrl(cid);
+      console.log("Using gateway URL:", gatewayUrl);
+      
       // Fetch from IPFS gateway
-      const gatewayUrl = `${PINATA_GATEWAY}${cid}`;
       const response = await fetch(gatewayUrl);
       
       if (!response.ok) {
-        throw new Error(`Failed to download from IPFS: ${response.statusText}`);
+        throw new Error(`Failed to download from IPFS: ${response.statusText} (HTTP ${response.status})`);
+      }
+      
+      // Set appropriate headers
+      const contentType = response.headers.get('content-type');
+      if (contentType) {
+        res.setHeader('Content-Type', contentType);
+      }
+      
+      const contentLength = response.headers.get('content-length');
+      if (contentLength) {
+        res.setHeader('Content-Length', contentLength);
       }
       
       // Stream the response
       if (response.body) {
         response.body.pipe(res);
+        console.log("Successfully streaming IPFS content");
       } else {
         throw new Error("Response body is null");
       }
     } catch (error: any) {
       console.error("IPFS download error:", error);
-      return res.status(500).json({ message: error.message || "Failed to download from IPFS" });
+      return res.status(500).json({ 
+        message: error.message || "Failed to download from IPFS",
+        cid: req.query.cid
+      });
     }
   });
   
