@@ -90,7 +90,14 @@ export default function PaymentSection() {
           
           // Start video generation if we have parameters
           if (generationParams) {
-            await startVideoGeneration(generationParams);
+            console.log("Attempting to start generation with stored params:", generationParams);
+            try {
+              await startVideoGeneration(generationParams);
+            } catch (err) {
+              console.error("Failed to start generation:", err);
+            }
+          } else {
+            console.error("No generation parameters found!");
           }
           
           setStep('processing');
@@ -248,7 +255,14 @@ export default function PaymentSection() {
                     
                     // Start video generation if we have parameters
                     if (generationParams) {
-                      await startVideoGeneration(generationParams);
+                      console.log("Attempting to start generation with stored params (manual):", generationParams);
+                      try {
+                        await startVideoGeneration(generationParams);
+                      } catch (err) {
+                        console.error("Failed to start generation (manual verification):", err);
+                      }
+                    } else {
+                      console.error("No generation parameters found for manual verification!");
                     }
                     
                     setStep('processing');

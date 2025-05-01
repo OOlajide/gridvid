@@ -63,10 +63,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Video generation endpoint
   app.post("/api/videos/generate", async (req: Request, res: Response) => {
     try {
+      // Debug logging
+      console.log("Received video generation request:", req.body);
+      
       // Validate request
       const validationResult = generateVideoSchema.safeParse(req.body);
       
       if (!validationResult.success) {
+        console.log("Validation failed:", validationResult.error.errors);
         return res.status(400).json({ 
           message: "Invalid request", 
           errors: validationResult.error.errors 

@@ -54,7 +54,13 @@ export function WorkflowProvider({ children }: { children: ReactNode }) {
   const [processingStatus, setProcessingStatus] = useState("Creating your amazing video. This typically takes 1 minute.");
   const [currentStageIndex, setCurrentStageIndex] = useState(0);
   const [generationId, setGenerationId] = useState<string | null>(null);
-  const [generationParams, setGenerationParams] = useState<GenerateVideoRequest | null>(null);
+  const [generationParams, setGenerationParamsState] = useState<GenerateVideoRequest | null>(null);
+  
+  // Wrap setGenerationParams to track changes
+  const setGenerationParams = useCallback((params: GenerateVideoRequest) => {
+    console.log("Setting generation params:", params);
+    setGenerationParamsState(params);
+  }, []);
   
   const handleSetStep = useCallback((step: WorkflowStep) => {
     setCurrentStep(step);
@@ -68,18 +74,28 @@ export function WorkflowProvider({ children }: { children: ReactNode }) {
     try {
       setIsProcessing(true);
       
+      // Log the parameters we're sending to help debug
+      console.log("Starting video generation with params:", params);
+      
       // Start video generation process
       const response = await apiRequest("POST", "/api/videos/generate", params);
       const data = await response.json();
+      
+      console.log("Generation response:", data);
       
       setGenerationId(data.generationId);
       setCurrentStageIndex(0);
     } catch (error: any) {
       console.error("Video generation error:", error);
+      toast({
+        title: "Video Generation Failed",
+        description: error.message || "Failed to start video generation",
+        variant: "destructive"
+      });
       setIsProcessing(false);
       throw error;
     }
-  }, []);
+  }, [toast]);
   
   const pollGenerationStatus = useCallback(async () => {
     if (!generationId) return false;
