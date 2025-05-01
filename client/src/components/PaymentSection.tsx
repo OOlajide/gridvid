@@ -202,21 +202,9 @@ export default function PaymentSection() {
         <div className="flex items-start">
           <span className="material-icons text-secondary mr-2 mt-0.5">info</span>
           <div>
-            <h4 className="font-medium mb-1">What's included</h4>
-            <ul className="text-text-secondary text-sm space-y-1">
-              <li className="flex items-center">
-                <span className="material-icons text-accent text-xs mr-1">check_circle</span> 
-                AI video generation
-              </li>
-              <li className="flex items-center">
-                <span className="material-icons text-accent text-xs mr-1">check_circle</span> 
-                IPFS storage
-              </li>
-              <li className="flex items-center">
-                <span className="material-icons text-accent text-xs mr-1">check_circle</span> 
-                Universal Profile metadata (optional)
-              </li>
-            </ul>
+            <p className="text-text-secondary text-sm">
+              GridVid uses Google's state-of-the-art Veo 2 model. Running this advanced model is resource-intensive, and your payment directly covers the direct computational cost for your prompt.
+            </p>
           </div>
         </div>
       </div>
