@@ -321,13 +321,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // LSP metadata storage endpoint (simplified for this example)
+  // LSP metadata storage endpoint
   app.post("/api/lsp/store", async (req: Request, res: Response) => {
     try {
+      // Validate the request
+      const { ipfsCid, gatewayUrl, prompt } = req.body;
+      
+      if (!ipfsCid || !gatewayUrl || !prompt) {
+        return res.status(400).json({ message: "Missing required fields: ipfsCid, gatewayUrl, prompt" });
+      }
+      
+      // Verify that the CID exists on IPFS
+      const { checkIPFSStatus } = await import('./pinata');
+      const exists = await checkIPFSStatus(ipfsCid);
+      
+      if (!exists) {
+        return res.status(404).json({ message: "Content not found on IPFS. Please ensure it has been properly uploaded." });
+      }
+      
       // In a real implementation, this would interact with the LUKSO blockchain
-      // For now, we'll just return success
+      // For example, using the LSP metadata storage functions from LSP-SDK
+      console.log("Storing LSP metadata for video with CID:", ipfsCid);
+      console.log("This would normally be stored on the LUKSO blockchain via Universal Profile");
+      
+      // Return success (simulating blockchain transaction)
       return res.status(200).json({ 
-        message: "Metadata stored successfully in Universal Profile" 
+        message: "Metadata stored successfully in Universal Profile",
+        storedMetadata: {
+          ipfsCid,
+          gatewayUrl,
+          timestamp: new Date().toISOString(),
+          contentType: "video/mp4",
+          title: `AI-Generated Video: ${prompt.substring(0, 30)}${prompt.length > 30 ? '...' : ''}`,
+        }
       });
     } catch (error: any) {
       console.error("LSP storage error:", error);

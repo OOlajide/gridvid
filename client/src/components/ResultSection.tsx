@@ -46,15 +46,28 @@ export default function ResultSection({ video, onNewGeneration }: ResultSectionP
         video.gatewayUrl : 
         `http://localhost:5000${video.gatewayUrl}`;
       
+      // Check if this is a real IPFS URL
+      const isRealIPFS = video.ipfsCid.startsWith('baf');
+      
+      // Add additional metadata
       await storeLSPMetadata({
         ipfsCid: video.ipfsCid,
         gatewayUrl: videoUrl,
         prompt: video.prompt,
+        aspectRatio: video.aspectRatio,
+        generationType: video.generationType,
+        metadata: {
+          isIPFS: isRealIPFS,
+          duration: video.duration,
+          timestamp: Date.now(),
+          source: "LUKSO AI Video Generator",
+          storage: isRealIPFS ? "Pinata IPFS" : "Local Storage"
+        }
       });
       
       toast({
         title: "Storage Successful",
-        description: "Video metadata has been stored in your Universal Profile",
+        description: `Video metadata has been stored in your Universal Profile${isRealIPFS ? ' via IPFS' : ''}`,
       });
     } catch (error: any) {
       console.error('LSP storage error:', error);
@@ -89,7 +102,9 @@ export default function ResultSection({ video, onNewGeneration }: ResultSectionP
         </button>
       </div>
       
-      <p className="text-text-secondary mb-6">Your video has been successfully generated and stored on IPFS.</p>
+      <p className="text-text-secondary mb-6">
+        Your video has been successfully generated and {video.ipfsCid.startsWith('baf') ? 'stored on IPFS' : 'saved to our server'}.
+      </p>
       
       {/* Video Preview */}
       <div className="mb-6 bg-black rounded-lg overflow-hidden">

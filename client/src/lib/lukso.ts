@@ -247,22 +247,46 @@ export async function storeLSPMetadata(videoData: {
   ipfsCid: string;
   gatewayUrl: string;
   prompt: string;
+  aspectRatio?: string;
+  generationType?: string;
+  metadata?: Record<string, any>;
 }): Promise<void> {
   try {
+    console.log("Storing metadata in Universal Profile:", videoData);
+    
+    // Prepare LSP metadata with IPFS links
+    const lspMetadata = {
+      ...videoData,
+      ipfsGateway: videoData.gatewayUrl.includes('/ipfs/') 
+        ? videoData.gatewayUrl.split('/ipfs/')[0]
+        : 'https://orange-imaginative-hawk-931.mypinata.cloud',
+      timestamp: Date.now(),
+      storageType: 'ipfs',
+      description: `AI-generated video from prompt: ${videoData.prompt.substring(0, 100)}${videoData.prompt.length > 100 ? '...' : ''}`,
+      contentType: 'video/mp4'
+    };
+    
     // Make an API call to store metadata on LSP
     const response = await fetch("/api/lsp/store", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(videoData),
+      body: JSON.stringify(lspMetadata),
       credentials: "include",
     });
 
     if (!response.ok) {
-      const error = await response.text();
-      throw new Error(`LSP storage failed: ${error}`);
+      const errorData = await response.json()
+        .catch(() => ({ message: "Unknown error when storing LSP metadata" }));
+      throw new Error(errorData.message || `LSP storage failed: HTTP ${response.status}`);
     }
+    
+    // Log success response
+    const result = await response.json();
+    console.log("LSP storage success:", result);
+    
+    return result;
   } catch (error) {
     console.error("LSP storage error:", error);
     throw error;
