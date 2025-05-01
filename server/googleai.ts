@@ -53,8 +53,9 @@ export async function generateVideo(req: VideoGenerationRequest): Promise<Video>
     // Configure generation options
     const model = "veo-2.0-generate-001";
     const config = {
-      personGeneration: "dont_allow",
+      personGeneration: "allow_adult",
       aspectRatio: aspectRatio,
+      numberOfVideos: 1
     };
     
     // Start video generation operation
@@ -197,7 +198,7 @@ export async function generateVideo(req: VideoGenerationRequest): Promise<Video>
       aspectRatio,
       ipfsCid,
       gatewayUrl, // Use the IPFS gateway URL
-      duration: "5.0 seconds", // Example duration
+      duration: "8.0 seconds", // Example duration
       walletAddress: "0x123456789abcdef", // This would come from the user's wallet
       generationType,
       metadata: { 

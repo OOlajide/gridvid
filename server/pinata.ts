@@ -1,6 +1,7 @@
 import fetch from "node-fetch";
 import fs from "fs";
 import path from "path";
+// Use the standard FormData from the form-data package since it's more compatible with node-fetch
 import FormData from "form-data";
 
 // Initialize Pinata credentials
@@ -21,19 +22,24 @@ export async function uploadToIPFS(filePath: string, name?: string): Promise<{
   pinataUrl: string;
 }> {
   try {
-    // Create the form data
+    // Create FormData instance
     const form = new FormData();
     
-    // Read the file as a stream and add it to the form
-    const fileStream = fs.createReadStream(filePath);
+    // Get file details
     const fileName = name || path.basename(filePath);
+    const fileSize = (await fs.promises.stat(filePath)).size;
+    const contentType = fileName.endsWith('.mp4') ? 'video/mp4' : 'application/octet-stream';
     
+    console.log(`Preparing to upload ${fileName} (${fileSize} bytes) to IPFS via Pinata`);
+    
+    // Add file to form as a stream
+    const fileStream = fs.createReadStream(filePath);
     form.append('file', fileStream, {
       filename: fileName,
-      contentType: fileName.endsWith('.mp4') ? 'video/mp4' : 'application/octet-stream'
+      contentType
     });
     
-    // Add metadata
+    // Add metadata to the form
     form.append('pinataMetadata', JSON.stringify({
       name: fileName,
       keyvalues: {
@@ -42,7 +48,7 @@ export async function uploadToIPFS(filePath: string, name?: string): Promise<{
       }
     }));
     
-    // Add pinning options with regions for better availability
+    // Add pinning options
     form.append('pinataOptions', JSON.stringify({
       cidVersion: 1,
       customPinPolicy: {
@@ -61,13 +67,17 @@ export async function uploadToIPFS(filePath: string, name?: string): Promise<{
     
     // Make API request to Pinata
     console.log("Making request to Pinata API...");
+    
     const response = await fetch('https://api.pinata.cloud/pinning/pinFileToIPFS', {
       method: 'POST',
       headers: {
         'pinata_api_key': PINATA_API_KEY,
         'pinata_secret_api_key': PINATA_API_SECRET,
+        // Form-data will set the correct multipart/form-data content-type with boundary
+        ...form.getHeaders()
       },
-      body: form as any,
+      // node-fetch accepts form-data's form as body
+      body: form
     });
     
     if (!response.ok) {

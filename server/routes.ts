@@ -159,20 +159,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log("Uploading test video to IPFS...");
       const { uploadToIPFS } = await import('./pinata');
       
+      let finalVideoData: InsertVideo;
+      
       try {
         // Upload to IPFS
-        const ipfsResult = await uploadToIPFS(tempVideoPath, `lukso-test-video-${Date.now()}.mp4`);
-        console.log("Test video uploaded to IPFS:", ipfsResult);
+        const uploadResult = await uploadToIPFS(tempVideoPath, `lukso-test-video-${Date.now()}.mp4`);
+        console.log("Test video uploaded to IPFS:", uploadResult);
         
         // Clean up temp file
         fs.unlinkSync(tempVideoPath);
         
-        // Create a test video entry in the database using IPFS data
-        const testVideoData: InsertVideo = {
+        // Create the video data for IPFS storage
+        finalVideoData = {
           prompt: "Test video with IPFS storage",
           aspectRatio: "16:9",
-          ipfsCid: ipfsResult.cid,
-          gatewayUrl: ipfsResult.gatewayUrl,
+          ipfsCid: uploadResult.cid,
+          gatewayUrl: uploadResult.gatewayUrl,
           duration: "1.0 seconds",
           walletAddress: "0x123456789abcdef",
           generationType: "text",
@@ -190,45 +192,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log("Using local file storage as fallback");
         fs.copyFileSync(tempVideoPath, testVideoPath);
         
-        // Create a test video entry with local storage
-        const testVideoData: InsertVideo = {
-          prompt: "Test video (local storage fallback)",
-          aspectRatio: "16:9",
-          ipfsCid: `local-${testVideoId}`,
-          gatewayUrl: `/videos/${testVideoFilename}`,
-          duration: "1.0 seconds",
-          walletAddress: "0x123456789abcdef",
-          generationType: "text",
-          metadata: { 
-            source: "Test",
-            model: "test-1.0" 
-          },
-        };
-      }
-      
-      // Define video data based on the try/catch result
-      let finalVideoData: InsertVideo;
-      
-      // Check if we've reached this point from the try block or the catch block
-      if (typeof ipfsResult !== 'undefined') {
-        // This is from the IPFS upload try block
-        finalVideoData = {
-          prompt: "Test video with IPFS storage",
-          aspectRatio: "16:9",
-          ipfsCid: ipfsResult.cid,
-          gatewayUrl: ipfsResult.gatewayUrl,
-          duration: "1.0 seconds",
-          walletAddress: "0x123456789abcdef",
-          generationType: "text",
-          metadata: { 
-            source: "Test",
-            model: "test-1.0",
-            ipfs: true,
-            timestamp: Date.now()
-          },
-        };
-      } else {
-        // This is from the catch block or fallback
+        // Create the video data for local storage fallback
         finalVideoData = {
           prompt: "Test video (local storage fallback)",
           aspectRatio: "16:9",

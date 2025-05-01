@@ -1,0 +1,23 @@
+orm-data isn't really spec compatible and it dose some abnormal stuff. I know many other libraries support it. But it increases the complexity to anyone who is building a http library if they decide to support it. They (we) need to learn how it works internally of how it can be read & streamed
+
+I would like to emphasize that it's better to follow the standards instead. Any spec'ed FormData impl shouldn't need any documentation.
+
+There are two other spec compatible FormData packages on npm that works grate on NodeJS
+
+There is my own formdata-polyfill
+And also formdata-node
+Both of wish can support appending Blob/Files backed up by the FileSystem (and also blob-like items). Unlike form-data that can only append a one-time readable streams. A FormData should be re-useable if you want to clone the body for whatever reason. (our tests cases could use the same FormData instances - but this dose not work with form-data)
+
+This means that all other http libraries out there needs to serialize the body themself, But fear not, there are packages out there also that can convert them
+
+My formdata-polyfill have a utility function to convert any spec compatible FormData into a Blob so that can be posted instead formDataToBlob(formdata)
+octet-stream have built a FormData Encoder
+And we also have a encoder built in now into node-fetch itself to convert any spec compatible FormData. after the introduction of response.formData() support we now include formdata-polyfill and using formDataToBlob(fd).stream()
+form-data have had a long time to address the read/modify parts but never got around to implement any those methods. That's b/c it's based on appending all entries directly into a readable stream, so they can't iterated over or modified them.
+
+So my proposal really is to:
+
+Stop supporting form-data
+Throw a error or warning message that form-data is no longer supported and also mention alternative packages
+Remove all hacks where we utilize form.getHeaders(), getBoundary(), getLength(), hasKnownLength() - A FormData size should always be known/calculated.
+So what do you think? I would rather want this to be moved into a discussion but this repo haven't enabled it (and i can't do that)
