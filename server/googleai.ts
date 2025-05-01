@@ -178,44 +178,32 @@ export async function generateVideo(req: VideoGenerationRequest): Promise<Video>
       });
     }
     
-    // For demo purposes, we'll store the video locally and serve it directly 
-    // instead of using actual IPFS
+    // Now upload the video to IPFS through Pinata
+    const { uploadToIPFS } = await import('./pinata');
     
-    // Create a public directory to serve the videos if it doesn't exist
-    const publicDir = path.join(process.cwd(), "public");
-    const videosDir = path.join(publicDir, "videos");
+    console.log("Uploading video to IPFS via Pinata...");
+    const ipfsResult = await uploadToIPFS(videoPath, `lukso-generated-video-${Date.now()}.mp4`);
     
-    if (!fs.existsSync(publicDir)) {
-      fs.mkdirSync(publicDir, { recursive: true });
-    }
-    if (!fs.existsSync(videosDir)) {
-      fs.mkdirSync(videosDir, { recursive: true });
-    }
+    // Get the IPFS CID and gateway URL
+    const ipfsCid = ipfsResult.cid;
+    const gatewayUrl = ipfsResult.gatewayUrl;
     
-    // Generate a simple ID for the video file
-    const videoId = crypto.randomUUID();
-    const publicVideoFilename = `${videoId}.mp4`;
-    const publicVideoPath = path.join(videosDir, publicVideoFilename);
-    
-    // Copy the video to the public directory
-    fs.copyFileSync(videoPath, publicVideoPath);
-    
-    // Create a URL for accessing the video
-    const videoUrl = `/videos/${publicVideoFilename}`;
-    const ipfsCid = `local-${videoId}`; // We're not using real IPFS but need an ID
+    console.log(`Video uploaded to IPFS with CID: ${ipfsCid}`);
+    console.log(`Video accessible at: ${gatewayUrl}`);
     
     // Create video record in database
     const videoData: InsertVideo = {
       prompt,
       aspectRatio,
       ipfsCid,
-      gatewayUrl: videoUrl, // Use the local URL instead of IPFS gateway
+      gatewayUrl, // Use the IPFS gateway URL
       duration: "5.0 seconds", // Example duration
       walletAddress: "0x123456789abcdef", // This would come from the user's wallet
       generationType,
       metadata: { 
         source: "Google Veo AI",
-        model: "veo-2.0-generate-001" 
+        model: "veo-2.0-generate-001",
+        ipfs: true // Indicate this is on IPFS
       },
     };
     
