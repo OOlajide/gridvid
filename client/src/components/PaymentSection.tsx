@@ -85,22 +85,39 @@ export default function PaymentSection() {
           setTransactionStatus("");
           setIsProcessing(false);
           
-          // Update workflow state
+          // Update workflow state first
           completePayment();
           
           // Start video generation if we have parameters
           if (generationParams) {
             console.log("Attempting to start generation with stored params:", generationParams);
             try {
-              await startVideoGeneration(generationParams);
+              // Make sure we properly await the video generation
+              await startVideoGeneration({
+                prompt: generationParams.prompt,
+                aspectRatio: generationParams.aspectRatio,
+                generationType: generationParams.generationType,
+                imageBase64: generationParams.imageBase64
+              });
+              
+              // Only move to processing after successful generation start
+              setStep('processing');
             } catch (err) {
               console.error("Failed to start generation:", err);
+              toast({
+                title: "Video Generation Failed",
+                description: "There was an error starting the video generation. Please try again.",
+                variant: "destructive"
+              });
             }
           } else {
             console.error("No generation parameters found!");
+            toast({
+              title: "Generation Error",
+              description: "No generation parameters found. Please try again.",
+              variant: "destructive"
+            });
           }
-          
-          setStep('processing');
           return true;
         }
       } catch (error: any) {
@@ -257,15 +274,32 @@ export default function PaymentSection() {
                     if (generationParams) {
                       console.log("Attempting to start generation with stored params (manual):", generationParams);
                       try {
-                        await startVideoGeneration(generationParams);
+                        // Make sure we properly await the video generation
+                        await startVideoGeneration({
+                          prompt: generationParams.prompt,
+                          aspectRatio: generationParams.aspectRatio,
+                          generationType: generationParams.generationType,
+                          imageBase64: generationParams.imageBase64
+                        });
+                        
+                        // Only move to processing after successful generation start
+                        setStep('processing');
                       } catch (err) {
                         console.error("Failed to start generation (manual verification):", err);
+                        toast({
+                          title: "Video Generation Failed",
+                          description: "There was an error starting the video generation. Please try again.",
+                          variant: "destructive"
+                        });
                       }
                     } else {
                       console.error("No generation parameters found for manual verification!");
+                      toast({
+                        title: "Generation Error",
+                        description: "No generation parameters found. Please try again.",
+                        variant: "destructive"
+                      });
                     }
-                    
-                    setStep('processing');
                   }}
                   className="bg-secondary hover:bg-opacity-90 text-white px-6 py-3 rounded font-semibold flex items-center mx-auto transition-all mb-2"
                 >

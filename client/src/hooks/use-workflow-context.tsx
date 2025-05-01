@@ -77,14 +77,30 @@ export function WorkflowProvider({ children }: { children: ReactNode }) {
       // Log the parameters we're sending to help debug
       console.log("Starting video generation with params:", params);
       
+      // Make sure we have a clean object with only the required fields
+      const cleanParams = {
+        prompt: params.prompt,
+        aspectRatio: params.aspectRatio,
+        generationType: params.generationType,
+        // Only include imageBase64 if it exists and is for image-to-video
+        ...(params.imageBase64 && params.generationType === 'image' ? { imageBase64: params.imageBase64 } : {})
+      };
+      
+      console.log("Sending cleaned parameters to API:", cleanParams);
+      
       // Start video generation process
-      const response = await apiRequest("POST", "/api/videos/generate", params);
+      const response = await apiRequest("POST", "/api/videos/generate", cleanParams);
       const data = await response.json();
       
       console.log("Generation response:", data);
       
-      setGenerationId(data.generationId);
-      setCurrentStageIndex(0);
+      if (data.generationId) {
+        setGenerationId(data.generationId);
+        setCurrentStageIndex(0);
+        return data.generationId;
+      } else {
+        throw new Error("No generation ID returned from server");
+      }
     } catch (error: any) {
       console.error("Video generation error:", error);
       toast({
