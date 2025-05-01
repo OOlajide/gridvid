@@ -92,6 +92,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         statusCallback: (status) => {
           videoGenerations.set(generationId, status);
         }
+      }).catch(error => {
+        console.error("Async video generation error:", error);
+        videoGenerations.set(generationId, {
+          status: `Error: ${error.message || "Unknown error"}`,
+          stageIndex: -1,
+          complete: true,
+          startedAt: new Date(),
+          video: null
+        });
       });
       
       return res.status(202).json({ 

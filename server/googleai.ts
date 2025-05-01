@@ -151,7 +151,18 @@ export async function generateVideo(req: VideoGenerationRequest): Promise<Video>
         return;
       }
       
-      Readable.fromWeb(response.body as any).pipe(fileStream);
+      // Handle the response body streaming in a more compatible way
+      if (response.body.pipe) {
+        // If body has pipe method (node-fetch), use it directly
+        response.body.pipe(fileStream);
+      } else {
+        // Last resort - convert buffer/text
+        response.buffer().then(buffer => {
+          fileStream.write(buffer);
+          fileStream.end();
+        }).catch(reject);
+      }
+      
       fileStream.on("finish", resolve);
       fileStream.on("error", reject);
     });

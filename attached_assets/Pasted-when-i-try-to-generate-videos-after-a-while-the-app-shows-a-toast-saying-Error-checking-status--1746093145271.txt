@@ -1,0 +1,108 @@
+when i try to generate videos after a while the app shows a toast saying:
+
+Error checking status
+failed to get generation status
+
+
+
+Then I checked the logs and saw these errors:
+
+
+2025-05-01 10:15:57.04
+55951506
+User
+Video generation error: TypeError [ERR_INVALID_ARG_TYPE]: The "readableStream" argument must be an instance of ReadableStream. Received an instance of PassThrough
+2025-05-01 10:15:57.04
+55951506
+User
+at Object.newStreamReadableFromReadableStream (node:internal/webstreams/adapters:485:11)
+2025-05-01 10:15:57.04
+55951506
+User
+at Readable.fromWeb (node:internal/streams/readable:1742:27)
+2025-05-01 10:15:57.04
+55951506
+User
+at statusCallback.status (file:///home/runner/workspace/dist/index.js:169:16)
+2025-05-01 10:15:57.04
+55951506
+User
+at new Promise ()
+2025-05-01 10:15:57.04
+55951506
+User
+at generateVideo (file:///home/runner/workspace/dist/index.js:164:11)
+2025-05-01 10:15:57.04
+55951506
+User
+at process.processTicksAndRejections (node:internal/process/task_queues:95:5) {
+2025-05-01 10:15:57.04
+55951506
+User
+code: 'ERR_INVALID_ARG_TYPE'
+2025-05-01 10:15:57.04
+55951506
+User
+}
+2025-05-01 10:15:57.14
+55951506
+User
+node:internal/process/promises:391
+2025-05-01 10:15:57.14
+55951506
+User
+triggerUncaughtException(err, true /* fromPromise */);
+2025-05-01 10:15:57.14
+55951506
+User
+^
+2025-05-01 10:15:57.14
+55951506
+User
+2025-05-01 10:15:57.14
+55951506
+User
+TypeError [ERR_INVALID_ARG_TYPE]: The "readableStream" argument must be an instance of ReadableStream. Received an instance of PassThrough
+2025-05-01 10:15:57.14
+55951506
+User
+at Object.newStreamReadableFromReadableStream (node:internal/webstreams/adapters:485:11)
+2025-05-01 10:15:57.14
+55951506
+User
+at Readable.fromWeb (node:internal/streams/readable:1742:27)
+2025-05-01 10:15:57.14
+55951506
+User
+at statusCallback.status (file:///home/runner/workspace/dist/index.js:169:16)
+2025-05-01 10:15:57.14
+55951506
+User
+at new Promise ()
+2025-05-01 10:15:57.14
+55951506
+User
+at generateVideo (file:///home/runner/workspace/dist/index.js:164:11)
+2025-05-01 10:15:57.14
+55951506
+User
+at process.processTicksAndRejections (node:internal/process/task_queues:95:5) {
+2025-05-01 10:15:57.14
+55951506
+User
+code: 'ERR_INVALID_ARG_TYPE'
+2025-05-01 10:15:57.14
+55951506
+User
+}
+2025-05-01 10:15:57.14
+55951506
+User
+2025-05-01 10:15:57.14
+55951506
+User
+Node.js v20.18.1
+2025-05-01 10:15:59.08
+55951506
+System
+command finished with error [npm run start]: exit status 1
