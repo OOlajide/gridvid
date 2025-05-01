@@ -43,7 +43,7 @@ export default function Home() {
           {/* App Intro */}
           <div className="text-center mb-10">
             <h1 className="font-display text-4xl font-bold mb-3 bg-gradient-to-r from-primary to-secondary inline-block text-transparent bg-clip-text">
-              AI Video Generation
+              GridVid AI Video Generator
             </h1>
             <p className="text-text-secondary max-w-2xl mx-auto">
               Generate stunning AI-powered videos from text or images using your LUKSO Universal Profile.
@@ -120,7 +120,7 @@ export default function Home() {
           <div className="flex flex-col md:flex-row justify-between items-center">
             <div className="flex items-center">
               <span className="material-icons text-primary text-sm mr-1">movie_filter</span>
-              <span className="text-text-secondary text-sm">LUKSOVision | AI Video Generator</span>
+              <span className="text-text-secondary text-sm">GridVid | AI Video Generator</span>
             </div>
             <div className="flex space-x-4 mt-4 md:mt-0">
               <a 
