@@ -23,7 +23,6 @@ export interface VideoGenerationRequest {
   aspectRatio: string;
   generationType: string;
   durationSeconds: number;
-  imageBase64?: string;
   statusCallback?: (status: VideoGenerationStatus) => void;
 }
 
@@ -37,7 +36,7 @@ export interface VideoGenerationStatus {
 
 // Function to generate video
 export async function generateVideo(req: VideoGenerationRequest): Promise<Video> {
-  const { prompt, aspectRatio, generationType, durationSeconds, imageBase64, statusCallback } = req;
+  const { prompt, aspectRatio, generationType, durationSeconds, statusCallback } = req;
   
   try {
     // Update status
@@ -60,33 +59,12 @@ export async function generateVideo(req: VideoGenerationRequest): Promise<Video>
       durationSeconds: durationSeconds
     };
     
-    // Start video generation operation
-    let operation;
-    
-    if (generationType === "text") {
-      // Text-to-video generation
-      operation = await genAI.models.generateVideos({
-        model,
-        prompt,
-        config,
-      });
-    } else {
-      // Image-to-video generation
-      if (!imageBase64) {
-        throw new Error("Image is required for image-to-video generation");
-      }
-      
-      // Convert base64 to image for the API
-      operation = await genAI.models.generateVideos({
-        model,
-        prompt,
-        image: {
-          imageBytes: imageBase64,
-          mimeType: "image/png", // Assumes PNG; adjust as needed
-        },
-        config,
-      });
-    }
+    // Start text-to-video generation operation
+    let operation = await genAI.models.generateVideos({
+      model,
+      prompt,
+      config,
+    });
     
     // Update status
     if (statusCallback) {

@@ -234,7 +234,7 @@ export default function PaymentSection() {
           <span className="material-icons text-secondary mr-2 mt-0.5">info</span>
           <div>
             <p className="text-text-secondary text-sm">
-              GridVid uses Google's state-of-the-art Veo 2 model. Running this advanced model is resource-intensive, and your payment directly covers the direct computational cost for your prompt.
+              GridVid uses Google's state-of-the-art Veo 2 model. Running this advanced model is resource-intensive, and your payment covers the direct computational cost for your prompt.
             </p>
           </div>
         </div>
