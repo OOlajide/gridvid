@@ -1,4 +1,7 @@
-import { users, videos, type User, type InsertUser, type Video, type InsertVideo } from "@shared/schema";
+import { type User, type InsertUser, type Video, type InsertVideo } from "@shared/schema";
+import { db } from "./db";
+import { eq, desc } from "drizzle-orm";
+import * as schema from "@shared/schema";
 
 // modify the interface with any CRUD methods
 // you might need
@@ -14,80 +17,58 @@ export interface IStorage {
   createVideo(video: InsertVideo): Promise<Video>;
 }
 
-export class MemStorage implements IStorage {
-  private users: Map<number, User>;
-  private videos: Map<number, Video>;
-  userCurrentId: number;
-  videoCurrentId: number;
-
-  constructor() {
-    this.users = new Map();
-    this.videos = new Map();
-    this.userCurrentId = 1;
-    this.videoCurrentId = 1;
-  }
-
+export class DatabaseStorage implements IStorage {
   async getUser(id: number): Promise<User | undefined> {
-    return this.users.get(id);
+    const result = await db.select().from(schema.users).where(eq(schema.users.id, id));
+    return result.length > 0 ? result[0] : undefined;
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.username === username,
-    );
+    const userResults = await db.select().from(schema.users).where(eq(schema.users.username, username));
+    return userResults.length > 0 ? userResults[0] : undefined;
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const id = this.userCurrentId++;
-    const user: User = { ...insertUser, id };
-    this.users.set(id, user);
-    return user;
+    const newUsers = await db.insert(schema.users).values(insertUser).returning();
+    return newUsers[0];
   }
   
   // Video methods
   async getVideo(id: number): Promise<Video | undefined> {
-    return this.videos.get(id);
+    const videoResults = await db.select().from(schema.videos).where(eq(schema.videos.id, id));
+    return videoResults.length > 0 ? videoResults[0] : undefined;
   }
   
   async listVideos(walletAddress?: string, limit: number = 10): Promise<Video[]> {
-    let videos = Array.from(this.videos.values());
-    
-    // Filter by wallet address if provided
     if (walletAddress) {
-      videos = videos.filter(video => video.walletAddress === walletAddress);
+      return await db.select()
+        .from(schema.videos)
+        .where(eq(schema.videos.walletAddress, walletAddress))
+        .orderBy(desc(schema.videos.createdAt))
+        .limit(limit);
+    } else {
+      return await db.select()
+        .from(schema.videos)
+        .orderBy(desc(schema.videos.createdAt))
+        .limit(limit);
     }
-    
-    // Sort by creation date (newest first)
-    videos.sort((a, b) => {
-      const dateA = new Date(a.createdAt);
-      const dateB = new Date(b.createdAt);
-      return dateB.getTime() - dateA.getTime();
-    });
-    
-    // Limit results
-    return videos.slice(0, limit);
   }
   
   async createVideo(insertVideo: InsertVideo): Promise<Video> {
-    const id = this.videoCurrentId++;
-    const now = new Date();
-    
     // Ensure metadata is set even if undefined in insertVideo
     const metadata = insertVideo.metadata || {};
     // Ensure duration is set to null if undefined
     const duration = insertVideo.duration || null;
     
-    const video: Video = {
+    const newVideos = await db.insert(schema.videos).values({
       ...insertVideo,
-      id,
-      createdAt: now,
       metadata,
       duration
-    };
+    }).returning();
     
-    this.videos.set(id, video);
-    return video;
+    return newVideos[0];
   }
 }
 
-export const storage = new MemStorage();
+// Export an instance of the DatabaseStorage class
+export const storage = new DatabaseStorage();
