@@ -24,19 +24,19 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    const userResults = await db.select().from(schema.users).where(eq(schema.users.username, username));
-    return userResults.length > 0 ? userResults[0] : undefined;
+    const result = await db.select().from(schema.users).where(eq(schema.users.username, username));
+    return result.length > 0 ? result[0] : undefined;
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const newUsers = await db.insert(schema.users).values(insertUser).returning();
-    return newUsers[0];
+    const result = await db.insert(schema.users).values(insertUser).returning();
+    return result[0];
   }
   
   // Video methods
   async getVideo(id: number): Promise<Video | undefined> {
-    const videoResults = await db.select().from(schema.videos).where(eq(schema.videos.id, id));
-    return videoResults.length > 0 ? videoResults[0] : undefined;
+    const result = await db.select().from(schema.videos).where(eq(schema.videos.id, id));
+    return result.length > 0 ? result[0] : undefined;
   }
   
   async listVideos(walletAddress?: string, limit: number = 10): Promise<Video[]> {
@@ -60,13 +60,13 @@ export class DatabaseStorage implements IStorage {
     // Ensure duration is set to null if undefined
     const duration = insertVideo.duration || null;
     
-    const newVideos = await db.insert(schema.videos).values({
+    const result = await db.insert(schema.videos).values({
       ...insertVideo,
       metadata,
       duration
     }).returning();
     
-    return newVideos[0];
+    return result[0];
   }
 }
 
