@@ -50,7 +50,7 @@ export default function VideoGenerator() {
         <span className="material-icons text-primary mr-2">create</span>
         Create Your Video
       </h2>
-      <p className="text-text-secondary mb-6">Describe the video you want to create with AI.</p>
+      <p className="text-text-secondary mb-6">Enter a detailed text prompt to create your AI-generated video.</p>
       
       <div>
         <div className="mb-4">

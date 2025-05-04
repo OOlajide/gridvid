@@ -8,7 +8,7 @@ import FormData from "form-data";
 const PINATA_API_KEY = process.env.PINATA_API_KEY;
 const PINATA_API_SECRET = process.env.PINATA_API_SECRET;
 const PINATA_JWT = process.env.PINATA_JWT;
-const PINATA_GATEWAY = process.env.PINATA_GATEWAY || "orange-imaginative-hawk-931.mypinata.cloud";
+const PINATA_GATEWAY = process.env.PINATA_GATEWAY
 
 // Verify that credentials are available
 if (!PINATA_API_KEY || !PINATA_API_SECRET) {

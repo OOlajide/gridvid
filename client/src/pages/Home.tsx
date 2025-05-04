@@ -46,7 +46,7 @@ export default function Home() {
               GridVid AI Video Generator
             </h1>
             <p className="text-text-secondary max-w-2xl mx-auto">
-              Generate stunning AI-powered videos from text or images using your LUKSO Universal Profile.
+              Generate stunning AI-powered videos from text on the Grid.
             </p>
           </div>
 
@@ -65,7 +65,7 @@ export default function Home() {
                     Connect Your Universal Profile
                   </h2>
                   <p className="text-text-secondary mb-6">
-                    Connect your LUKSO Universal Profile to create AI-generated videos and store them securely.
+                    Connect your LUKSO Universal Profile to create AI-generated videos from text prompts.
                   </p>
                   
                   <div className="flex flex-col md:flex-row items-center justify-center gap-6 py-4">
