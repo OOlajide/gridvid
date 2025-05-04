@@ -4,11 +4,16 @@ import path from "path";
 // Use the standard FormData from the form-data package since it's more compatible with node-fetch
 import FormData from "form-data";
 
-// Initialize Pinata credentials
-const PINATA_API_KEY = process.env.PINATA_API_KEY || "b60dae2c71c7ec75ee06";
-const PINATA_API_SECRET = process.env.PINATA_API_SECRET || "86f8d638b11c5a6c95a04454e314be0615b74b556ddf84c189b8727ca9773118";
-const PINATA_JWT = process.env.PINATA_JWT || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySW5mb3JtYXRpb24iOnsiaWQiOiJiOGE4ZjQxMC1hNGUwLTQyYzMtODJkZC1hMmYyZjExM2MyMGIiLCJlbWFpbCI6Im9sYWRhbmllbDE5QGdtYWlsLmNvbSIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlLCJwaW5fcG9saWN5Ijp7InJlZ2lvbnMiOlt7ImRlc2lyZWRSZXBsaWNhdGlvbkNvdW50IjoxLCJpZCI6IkZSQTEifSx7ImRlc2lyZWRSZXBsaWNhdGlvbkNvdW50IjoxLCJpZCI6Ik5ZQzEifV0sInZlcnNpb24iOjF9LCJtZmFfZW5hYmxlZCI6ZmFsc2UsInN0YXR1cyI6IkFDVElWRSJ9LCJhdXRoZW50aWNhdGlvblR5cGUiOiJzY29wZWRLZXkiLCJzY29wZWRLZXlLZXkiOiJiNjBkYWUyYzcxYzdlYzc1ZWUwNiIsInNjb3BlZEtleVNlY3JldCI6Ijg2ZjhkNjM4YjExYzVhNmM5NWEwNDQ1NGUzMTRiZTA2MTViNzRiNTU2ZGRmODRjMTg5Yjg3MjdjYTk3NzMxMTgiLCJleHAiOjE3Nzc1OTAyMTJ9.t0X17xaa4N0XWuO5PXDQINSI8Z6qzpgsjy3u15G2WcU";
-const PINATA_GATEWAY = "orange-imaginative-hawk-931.mypinata.cloud";
+// Initialize Pinata credentials from environment variables
+const PINATA_API_KEY = process.env.PINATA_API_KEY;
+const PINATA_API_SECRET = process.env.PINATA_API_SECRET;
+const PINATA_JWT = process.env.PINATA_JWT;
+const PINATA_GATEWAY = process.env.PINATA_GATEWAY || "orange-imaginative-hawk-931.mypinata.cloud";
+
+// Verify that credentials are available
+if (!PINATA_API_KEY || !PINATA_API_SECRET) {
+  console.warn("Pinata API credentials not found in environment variables. IPFS functionality may not work correctly.");
+}
 
 /**
  * Uploads a file to IPFS using Pinata's API
@@ -68,15 +73,30 @@ export async function uploadToIPFS(filePath: string, name?: string): Promise<{
     // Make API request to Pinata
     console.log("Making request to Pinata API...");
     
+    // Set headers based on available credentials
+    let headers = {
+      ...form.getHeaders()
+    };
+    
+    // Use JWT if available, otherwise use API key and secret
+    if (PINATA_JWT) {
+      headers = {
+        ...headers,
+        'Authorization': `Bearer ${PINATA_JWT}`
+      };
+    } else if (PINATA_API_KEY && PINATA_API_SECRET) {
+      headers = {
+        ...headers,
+        'pinata_api_key': PINATA_API_KEY,
+        'pinata_secret_api_key': PINATA_API_SECRET
+      };
+    } else {
+      throw new Error('No Pinata credentials available. Please set PINATA_JWT or PINATA_API_KEY and PINATA_API_SECRET environment variables.');
+    }
+    
     const response = await fetch('https://api.pinata.cloud/pinning/pinFileToIPFS', {
       method: 'POST',
-      headers: {
-        'pinata_api_key': PINATA_API_KEY,
-        'pinata_secret_api_key': PINATA_API_SECRET,
-        // Form-data will set the correct multipart/form-data content-type with boundary
-        ...form.getHeaders()
-      },
-      // node-fetch accepts form-data's form as body
+      headers,
       body: form
     });
     
