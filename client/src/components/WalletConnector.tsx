@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { provider } from "@/lib/lukso";
-import { useWorkflow } from "@/hooks/use-workflow";
+import { useWorkflow } from "@/hooks/use-workflow-context";
 import { useToast } from "@/hooks/use-toast";
 
 interface WalletConnectorProps {
@@ -43,6 +43,19 @@ export default function WalletConnector({ buttonStyle = "default" }: WalletConne
   
   const connectWallet = useCallback(async () => {
     try {
+      toast({
+        title: "Connecting Wallet",
+        description: "Please approve the connection in your LUKSO Universal Profile extension.",
+      });
+
+      // This is the key part - actually request accounts from the provider
+      // which triggers the extension popup
+      const accounts = await provider.request({ 
+        method: 'eth_requestAccounts' 
+      }) as Array<`0x${string}`>;
+      
+      console.log("Connected accounts:", accounts);
+      
       // Handle account changes
       const accountsChanged = (_accounts: string[]) => {
         setAllowedAccounts(_accounts);
@@ -58,17 +71,16 @@ export default function WalletConnector({ buttonStyle = "default" }: WalletConne
       provider.on('accountsChanged', accountsChanged);
       provider.on('contextAccountsChanged', contextAccountsChanged);
       
-      // Check if we already have accounts available
-      const _accounts = provider.accounts as Array<`0x${string}`>;
+      // Get context accounts
       const _contextAccounts = provider.contextAccounts || [];
       
-      setAllowedAccounts(_accounts);
+      setAllowedAccounts(accounts);
       setContextAccounts(_contextAccounts);
-      updateConnected(_accounts, _contextAccounts);
+      updateConnected(accounts, _contextAccounts);
         
       toast({
-        title: "Connecting Wallet",
-        description: "Please approve the connection in your LUKSO Universal Profile extension.",
+        title: "Wallet Connected",
+        description: "Your Universal Profile is now connected!",
       });
     } catch (error: any) {
       console.error('Error connecting wallet:', error);

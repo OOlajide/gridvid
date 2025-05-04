@@ -124,7 +124,7 @@ export default function Home() {
             </div>
             <div className="flex space-x-4 mt-4 md:mt-0">
               <a 
-                href="https://docs.lukso.tech/guides/universal-profile/browser-extension/" 
+                href="https://docs.lukso.tech/install-up-browser-extension" 
                 target="_blank" 
                 className="text-text-secondary hover:text-text-primary text-sm"
               >

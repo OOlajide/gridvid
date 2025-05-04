@@ -47,7 +47,11 @@ export interface UniversalProfile {
 }
 
 // Create provider instance outside components
-export const provider = createClientUPProvider();
+export const provider = createClientUPProvider({
+  autoConnect: true,  // Try to auto-connect on load
+  reconnect: true,    // Reconnect if connection is lost
+  debug: true,        // Enable debug logs to help troubleshoot
+});
 
 // Create wallet client to connect to provider
 export const walletClient = createWalletClient({
