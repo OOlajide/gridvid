@@ -31,8 +31,6 @@ export default function Home() {
               <span className="text-white">Vid</span>
             </h1>
           </div>
-          
-          <WalletConnector />
         </div>
       </header>
 
@@ -65,7 +63,7 @@ export default function Home() {
                     Connect Your Universal Profile
                   </h2>
                   <p className="text-text-secondary mb-6">
-                    Connect your Universal Profile (top left) in one click to start creating AI-generated videos from text.
+                    Connect your Universal Profile to start creating AI-generated videos from text.
                   </p>
                   
                   <div className="flex items-center justify-center gap-6 py-4">
