@@ -75,7 +75,12 @@ export default function Home() {
                         <h3 className="font-medium">Secure Connection</h3>
                       </div>
                       <p className="text-text-secondary text-sm">
-                        Your wallet connects securely to our platform using the UP Provider.
+                        You need the LUKSO Universal Profile Extension installed. <a 
+                          href="https://chrome.google.com/webstore/detail/universal-profiles/abpickdkkbnbcoepogfhkhennhfhehfn" 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-primary underline"
+                        >Get it here</a>.
                       </p>
                     </div>
                     
@@ -126,6 +131,7 @@ export default function Home() {
               <a 
                 href="https://docs.lukso.tech/install-up-browser-extension" 
                 target="_blank" 
+                rel="noopener noreferrer"
                 className="text-text-secondary hover:text-text-primary text-sm"
               >
                 UP Extension Guide
@@ -133,6 +139,7 @@ export default function Home() {
               <a 
                 href="https://docs.lukso.tech/" 
                 target="_blank" 
+                rel="noopener noreferrer"
                 className="text-text-secondary hover:text-text-primary text-sm"
               >
                 LUKSO Docs

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { provider } from "@/lib/lukso";
 import { useWorkflow } from "@/hooks/use-workflow-context";
@@ -43,45 +43,97 @@ export default function WalletConnector({ buttonStyle = "default" }: WalletConne
   
   const connectWallet = useCallback(async () => {
     try {
+      // First check if the provider exists and is properly initialized
+      if (!provider) {
+        throw new Error("UP Provider not initialized. Please refresh the page and try again.");
+      }
+      
+      // Check if the extension is detected
+      try {
+        await provider.request({ method: 'eth_accounts' });
+      } catch (error) {
+        console.error("Error checking UP extension:", error);
+        throw new Error("LUKSO UP Extension not detected. Please make sure it's installed and enabled.");
+      }
+      
       toast({
         title: "Connecting Wallet",
         description: "Please approve the connection in your LUKSO Universal Profile extension.",
       });
 
-      // This is the key part - actually request accounts from the provider
-      // which triggers the extension popup
-      const accounts = await provider.request({ 
-        method: 'eth_requestAccounts' 
-      }) as Array<`0x${string}`>;
-      
-      console.log("Connected accounts:", accounts);
-      
-      // Handle account changes
-      const accountsChanged = (_accounts: string[]) => {
-        setAllowedAccounts(_accounts);
-        updateConnected(_accounts, contextAccounts);
-      };
-
-      const contextAccountsChanged = (_accounts: string[]) => {
-        setContextAccounts(_accounts);
-        updateConnected(allowedAccounts, _accounts);
-      };
-
-      // Add event listeners
-      provider.on('accountsChanged', accountsChanged);
-      provider.on('contextAccountsChanged', contextAccountsChanged);
-      
-      // Get context accounts
-      const _contextAccounts = provider.contextAccounts || [];
-      
-      setAllowedAccounts(accounts);
-      setContextAccounts(_contextAccounts);
-      updateConnected(accounts, _contextAccounts);
-        
-      toast({
-        title: "Wallet Connected",
-        description: "Your Universal Profile is now connected!",
+      // Add some debugging
+      console.log("UP Provider state:", { 
+        provider, 
+        isConnected: provider.isConnected,
+        accounts: provider.accounts,
+        contextAccounts: provider.contextAccounts
       });
+
+      try {
+        // This is the key part - actually request accounts from the provider
+        // which triggers the extension popup
+        const accounts = await provider.request({ 
+          method: 'eth_requestAccounts' 
+        }) as Array<`0x${string}`>;
+        
+        console.log("Connected accounts:", accounts);
+        
+        // If no accounts are returned, throw an error
+        if (!accounts || accounts.length === 0) {
+          throw new Error("No Universal Profiles found or user rejected the connection request.");
+        }
+        
+        // Handle account changes
+        const accountsChanged = (_accounts: string[]) => {
+          setAllowedAccounts(_accounts);
+          updateConnected(_accounts, contextAccounts);
+        };
+
+        const contextAccountsChanged = (_accounts: string[]) => {
+          setContextAccounts(_accounts);
+          updateConnected(allowedAccounts, _accounts);
+        };
+
+        // Add event listeners
+        provider.on('accountsChanged', accountsChanged);
+        provider.on('contextAccountsChanged', contextAccountsChanged);
+        
+        // Get context accounts
+        const _contextAccounts = provider.contextAccounts || [];
+        
+        setAllowedAccounts(accounts);
+        setContextAccounts(_contextAccounts);
+        updateConnected(accounts, _contextAccounts);
+          
+        toast({
+          title: "Wallet Connected",
+          description: "Your Universal Profile is now connected!",
+        });
+      } catch (innerError: any) {
+        console.error("Error requesting accounts:", innerError);
+        if (innerError.message?.includes("No UP found")) {
+          toast({
+            title: "Extension Not Found",
+            description: (
+              <div>
+                <p>LUKSO Universal Profile Extension not detected.</p>
+                <a 
+                  href="https://chrome.google.com/webstore/detail/universal-profiles/abpickdkkbnbcoepogfhkhennhfhehfn" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-primary underline mt-2 block"
+                >
+                  Click here to install the UP Extension
+                </a>
+              </div>
+            ),
+            variant: "destructive",
+            duration: 10000 // Show for 10 seconds
+          });
+          throw new Error("No Universal Profile found. Please install the UP Extension and create a Universal Profile.");
+        }
+        throw innerError;
+      }
     } catch (error: any) {
       console.error('Error connecting wallet:', error);
       toast({
