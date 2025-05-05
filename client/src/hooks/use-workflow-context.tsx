@@ -82,8 +82,7 @@ export function WorkflowProvider({ children }: { children: ReactNode }) {
         prompt: params.prompt,
         aspectRatio: params.aspectRatio,
         generationType: params.generationType,
-        // Only include imageBase64 if it exists and is for image-to-video
-        ...(params.imageBase64 && params.generationType === 'image' ? { imageBase64: params.imageBase64 } : {})
+        durationSeconds: params.durationSeconds || 5
       };
       
       console.log("Sending cleaned parameters to API:", cleanParams);
