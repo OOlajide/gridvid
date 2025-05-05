@@ -47,7 +47,6 @@ export interface UniversalProfile {
 }
 
 // Create provider instance outside components
-// The provider has limited configuration options in this version
 export const provider = createClientUPProvider();
 
 // Create wallet client to connect to provider
