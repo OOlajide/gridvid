@@ -139,9 +139,11 @@ export default function WalletConnector({ buttonStyle = "default" }: WalletConne
           </div>
         </div>
       ) : (
-        <div className="invisible">
-          {/* Hidden button, functionality still runs */}
-          <button onClick={connectWallet} aria-hidden="true" className="hidden">Connect</button>
+        <div className="flex items-center cursor-pointer" onClick={connectWallet}>
+          <span className="mr-2 text-text-secondary text-sm">Connect</span>
+          <div className="w-8 h-8 rounded-full bg-background-lighter border-2 border-primary flex items-center justify-center">
+            <span className="material-icons text-sm">account_balance_wallet</span>
+          </div>
         </div>
       )}
     </div>
