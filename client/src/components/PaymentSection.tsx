@@ -5,7 +5,7 @@ import { useWorkflow } from "@/hooks/use-workflow";
 import { 
   PAYMENT_ADDRESS, 
   DEFAULT_PAYMENT_AMOUNT, 
-  TARGET_USD_AMOUNT,
+  USD_PER_SECOND,
   makePayment, 
   verifyPayment 
 } from "@/lib/lukso";
@@ -31,9 +31,12 @@ export default function PaymentSection() {
         const data = await response.json();
         setLyxPrice(data.price);
         
-        // Calculate payment amount in LYX based on target USD amount
-        if (data.price > 0) {
-          const amount = TARGET_USD_AMOUNT / data.price;
+        // Calculate payment amount in LYX based on duration and rate
+        if (data.price > 0 && generationParams?.durationSeconds) {
+          // Calculate USD amount based on duration ($0.35 per second)
+          const usdAmount = USD_PER_SECOND * generationParams.durationSeconds;
+          // Convert to LYX
+          const amount = usdAmount / data.price;
           // Round to 2 decimal places
           const roundedAmount = Math.round(amount * 100) / 100;
           setPaymentAmount(roundedAmount.toString());

@@ -34,8 +34,8 @@ import { lukso } from "viem/chains";
 export const PAYMENT_ADDRESS = "0x49A3E8389aF513d629A462bFfBc9D93B3536f088";
 // Default payment amount in LYX (used as fallback if price fetch fails)
 export const DEFAULT_PAYMENT_AMOUNT = "0.5";
-// Target payment amount in USD
-export const TARGET_USD_AMOUNT = 0.5;
+// Base cost per second in USD
+export const USD_PER_SECOND = 0.35;
 
 export interface UniversalProfile {
   provider: any;
@@ -97,10 +97,13 @@ async function fetchLYXPrice(): Promise<number> {
   }
 }
 
-// Function to calculate LYX amount based on USD target
-function calculateLYXAmount(lyxPriceUSD: number): string {
-  // Calculate how much LYX is needed for TARGET_USD_AMOUNT
-  const lyxAmount = TARGET_USD_AMOUNT / lyxPriceUSD;
+// Function to calculate LYX amount based on USD target and video duration
+function calculateLYXAmount(lyxPriceUSD: number, durationSeconds: number = 5): string {
+  // Calculate USD amount based on duration ($0.35 per second)
+  const usdAmount = USD_PER_SECOND * durationSeconds;
+  
+  // Calculate how much LYX is needed for the calculated USD amount
+  const lyxAmount = usdAmount / lyxPriceUSD;
   
   // Round to 2 decimal places
   const roundedAmount = Math.round(lyxAmount * 100) / 100;

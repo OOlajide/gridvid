@@ -50,7 +50,12 @@ export default function VideoGenerator() {
         <span className="material-icons text-primary mr-2">create</span>
         Create Your Video
       </h2>
-      <p className="text-text-secondary mb-6">Enter a detailed text prompt to create your AI-generated video.</p>
+      <p className="text-text-secondary mb-3">Enter a detailed text prompt to create your AI-generated video.</p>
+      
+      <div className="bg-background-lighter p-3 rounded-md mb-6 text-sm text-amber-600 flex items-start">
+        <span className="material-icons mr-2 text-amber-500 text-base">error_outline</span>
+        <p>For ethical reasons, you may generate videos that include adults, but not children.</p>
+      </div>
       
       <div>
         <div className="mb-4">
@@ -63,7 +68,7 @@ export default function VideoGenerator() {
             value={promptText}
             onChange={(e) => setPromptText(e.target.value)}
             className="w-full bg-background rounded-lg border border-background-lighter p-3 text-text-primary placeholder-text-disabled focus:outline-none focus:ring-2 focus:ring-primary"
-            placeholder="E.g. Panning wide shot of a calico kitten sleeping in the sunshine"
+            placeholder="E.g. The camera dollies to show a close up of a desperate man in a green trench coat. He's making a call on a rotary-style wall phone with a green neon light. It looks like a movie scene."
           />
         </div>
         
