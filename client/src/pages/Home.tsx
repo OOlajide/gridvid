@@ -57,7 +57,30 @@ export default function Home() {
             {/* Workflow Sections */}
             <div className="workflow-container space-y-8">
               
-              {/* Connect Wallet Section Removed */}
+              {/* 1. Connect Wallet Section */}
+              {currentStep === 'connect' && (
+                <Card className="p-6 bg-surface shadow-lg gradient-border">
+                  <h2 className="font-display text-2xl font-semibold mb-4 flex items-center">
+                    <span className="material-icons text-primary mr-2">link</span>
+                    Connect Your Universal Profile
+                  </h2>
+                  <p className="text-text-secondary mb-6">
+                    Connect your Universal Profile (top left) in one click to start creating AI-generated videos from text.
+                  </p>
+                  
+                  <div className="flex items-center justify-center gap-6 py-4">
+                    <div className="bg-background p-4 rounded-lg max-w-sm w-full">
+                      <div className="flex items-center mb-2">
+                        <span className="material-icons text-accent mr-2">security</span>
+                        <h3 className="font-medium">Secure Connection</h3>
+                      </div>
+                      <p className="text-text-secondary text-sm">
+                        Your wallet connects securely to our platform using the UP Provider.
+                      </p>
+                    </div>
+                  </div>
+                </Card>
+              )}
 
               {/* 2. Prompt Input Section */}
               {currentStep === 'prompt' && <VideoGenerator />}
