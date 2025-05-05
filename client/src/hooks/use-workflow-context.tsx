@@ -4,7 +4,7 @@ import { useToast } from "./use-toast";
 import { apiRequest } from "@/lib/queryClient";
 
 // Workflow step types
-type WorkflowStep = 'connect' | 'prompt' | 'payment' | 'processing' | 'result';
+type WorkflowStep = 'prompt' | 'payment' | 'processing' | 'result';
 
 // Processing stages for video generation
 interface ProcessingStage {
@@ -41,7 +41,7 @@ export function WorkflowProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
   
   // Workflow state
-  const [currentStep, setCurrentStep] = useState<WorkflowStep>('connect');
+  const [currentStep, setCurrentStep] = useState<WorkflowStep>('prompt');
   const [walletConnected, setWalletConnected] = useState(false);
   const [paymentComplete, setPaymentComplete] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -82,8 +82,7 @@ export function WorkflowProvider({ children }: { children: ReactNode }) {
         prompt: params.prompt,
         aspectRatio: params.aspectRatio,
         generationType: params.generationType,
-        // Only include imageBase64 if it exists and is for image-to-video
-        ...(params.imageBase64 && params.generationType === 'image' ? { imageBase64: params.imageBase64 } : {})
+        durationSeconds: params.durationSeconds
       };
       
       console.log("Sending cleaned parameters to API:", cleanParams);

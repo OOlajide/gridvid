@@ -139,10 +139,9 @@ export default function WalletConnector({ buttonStyle = "default" }: WalletConne
           </div>
         </div>
       ) : (
-        <div className="flex items-center cursor-pointer" onClick={connectWallet}>
-          <span className="mr-2 text-text-secondary text-sm">Connect</span>
-          <div className="w-8 h-8 rounded-full bg-background-lighter border-2 border-primary flex items-center justify-center">
-            <span className="material-icons text-sm">account_balance_wallet</span>
+        <div className="flex items-center">
+          <div className="w-8 h-8 rounded-full bg-background-lighter border-2 border-neutral-700 flex items-center justify-center animate-pulse">
+            <span className="material-icons text-sm">autorenew</span>
           </div>
         </div>
       )}
