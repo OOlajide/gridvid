@@ -111,7 +111,7 @@ function calculateLYXAmount(lyxPriceUSD: number, durationSeconds: number = 5): s
   return roundedAmount.toString();
 }
 
-export async function makePayment(): Promise<{hash: string, lyxAmount: string, lyxPrice: number}> {
+export async function makePayment(durationSeconds: number = 5): Promise<{hash: string, lyxAmount: string, lyxPrice: number, usdAmount: number}> {
   try {
     const accounts = provider.accounts as Array<`0x${string}`>;
     
@@ -122,11 +122,12 @@ export async function makePayment(): Promise<{hash: string, lyxAmount: string, l
     // Fetch current LYX price in USD
     let lyxPrice: number;
     let paymentAmount: string;
+    let usdAmount: number = USD_PER_SECOND * durationSeconds;
     
     try {
       lyxPrice = await fetchLYXPrice();
-      paymentAmount = calculateLYXAmount(lyxPrice);
-      console.log(`Current LYX price: $${lyxPrice}, Payment amount: ${paymentAmount} LYX`);
+      paymentAmount = calculateLYXAmount(lyxPrice, durationSeconds);
+      console.log(`Current LYX price: $${lyxPrice}, Video duration: ${durationSeconds}s, USD Amount: $${usdAmount.toFixed(2)}, Payment amount: ${paymentAmount} LYX`);
     } catch (error) {
       console.warn("Failed to fetch LYX price, using default amount:", error);
       lyxPrice = 0; // Unknown price
@@ -149,7 +150,8 @@ export async function makePayment(): Promise<{hash: string, lyxAmount: string, l
     return {
       hash,
       lyxAmount: paymentAmount,
-      lyxPrice
+      lyxPrice,
+      usdAmount
     };
   } catch (error) {
     console.error("Payment error:", error);

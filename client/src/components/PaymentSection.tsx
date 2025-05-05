@@ -100,8 +100,7 @@ export default function PaymentSection() {
                 prompt: generationParams.prompt,
                 aspectRatio: generationParams.aspectRatio,
                 generationType: generationParams.generationType,
-                durationSeconds: generationParams.durationSeconds || 5,
-                imageBase64: generationParams.imageBase64
+                durationSeconds: generationParams.durationSeconds || 5
               });
               
               // Only move to processing after successful generation start
@@ -159,7 +158,8 @@ export default function PaymentSection() {
         description: "Please confirm the transaction in your wallet...",
       });
       
-      const result = await makePayment();
+      // Pass the video duration to the payment function
+      const result = await makePayment(generationParams?.durationSeconds || 5);
       
       toast({
         title: "Transaction Sent",
@@ -212,10 +212,24 @@ export default function PaymentSection() {
           </span>
         </div>
         
-        {lyxPrice && (
+        {generationParams?.durationSeconds && (
           <div className="flex justify-between items-center mb-3 text-sm">
-            <span className="text-text-secondary">Equivalent to</span>
-            <span className="text-secondary">${TARGET_USD_AMOUNT.toFixed(2)} USD</span>
+            <span className="text-text-secondary">Video duration</span>
+            <span className="text-text-primary">{generationParams.durationSeconds} seconds</span>
+          </div>
+        )}
+        
+        {lyxPrice && generationParams?.durationSeconds && (
+          <div className="flex justify-between items-center mb-3 text-sm">
+            <span className="text-text-secondary">Cost per second</span>
+            <span className="text-text-primary">${USD_PER_SECOND.toFixed(2)} USD × {generationParams.durationSeconds}s</span>
+          </div>
+        )}
+        
+        {lyxPrice && generationParams?.durationSeconds && (
+          <div className="flex justify-between items-center mb-3 text-sm">
+            <span className="text-text-secondary">Total USD cost</span>
+            <span className="text-secondary font-semibold">${(USD_PER_SECOND * generationParams.durationSeconds).toFixed(2)} USD</span>
           </div>
         )}
         
@@ -283,8 +297,7 @@ export default function PaymentSection() {
                           prompt: generationParams.prompt,
                           aspectRatio: generationParams.aspectRatio,
                           generationType: generationParams.generationType,
-                          durationSeconds: generationParams.durationSeconds || 5,
-                          imageBase64: generationParams.imageBase64
+                          durationSeconds: generationParams.durationSeconds || 5
                         });
                         
                         // Only move to processing after successful generation start
