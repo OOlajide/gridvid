@@ -31,6 +31,8 @@ export default function Home() {
               <span className="text-white">Vid</span>
             </h1>
           </div>
+          
+          <WalletConnector />
         </div>
       </header>
 
