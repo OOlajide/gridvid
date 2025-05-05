@@ -65,10 +65,10 @@ export default function Home() {
                     Connect Your Universal Profile
                   </h2>
                   <p className="text-text-secondary mb-6">
-                    Connect your LUKSO Universal Profile to create AI-generated videos from text prompts.
+                    Connect your Universal Profile (top left) in one click to start creating AI-generated videos from text.
                   </p>
                   
-                  <div className="flex flex-col md:flex-row items-center justify-center gap-6 py-4">
+                  <div className="flex items-center justify-center gap-6 py-4">
                     <div className="bg-background p-4 rounded-lg max-w-sm w-full">
                       <div className="flex items-center mb-2">
                         <span className="material-icons text-accent mr-2">security</span>
@@ -78,20 +78,6 @@ export default function Home() {
                         Your wallet connects securely to our platform using the UP Provider.
                       </p>
                     </div>
-                    
-                    <div className="bg-background p-4 rounded-lg max-w-sm w-full">
-                      <div className="flex items-center mb-2">
-                        <span className="material-icons text-accent mr-2">storage</span>
-                        <h3 className="font-medium">IPFS Storage</h3>
-                      </div>
-                      <p className="text-text-secondary text-sm">
-                        Your generated videos are stored on IPFS for decentralized access.
-                      </p>
-                    </div>
-                  </div>
-                  
-                  <div className="mt-6 text-center">
-                    <WalletConnector buttonStyle="large" />
                   </div>
                 </Card>
               )}

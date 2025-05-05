@@ -122,23 +122,27 @@ export default function WalletConnector({ buttonStyle = "default" }: WalletConne
     updateConnected
   ]);
 
+  // Auto-connect when component mounts
+  useEffect(() => {
+    if (!walletConnected) {
+      connectWallet();
+    }
+  }, [walletConnected, connectWallet]);
+  
   return (
     <div>
-      {!walletConnected ? (
-        <Button 
-          onClick={connectWallet}
-          className={`bg-primary hover:bg-opacity-90 text-white flex items-center transition-all glow ${
-            buttonStyle === "large" ? "px-6 py-3 text-base" : "px-4 py-2"
-          }`}
-        >
-          <span className="material-icons mr-1">account_balance_wallet</span>
-          Connect Universal Profile
-        </Button>
-      ) : (
-        <div className="flex items-center">
+      {walletConnected ? (
+        <div className="flex items-center cursor-pointer" onClick={connectWallet}>
           <span className="mr-2 text-text-secondary text-sm">{userAddressShort}</span>
           <div className="w-8 h-8 rounded-full bg-background-lighter border-2 border-primary flex items-center justify-center">
             <span className="material-icons text-sm">person</span>
+          </div>
+        </div>
+      ) : (
+        <div className="flex items-center cursor-pointer" onClick={connectWallet}>
+          <span className="mr-2 text-text-secondary text-sm">Connect</span>
+          <div className="w-8 h-8 rounded-full bg-background-lighter border-2 border-primary flex items-center justify-center">
+            <span className="material-icons text-sm">account_balance_wallet</span>
           </div>
         </div>
       )}
