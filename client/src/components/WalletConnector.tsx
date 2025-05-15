@@ -67,8 +67,8 @@ export default function WalletConnector({ buttonStyle = "default" }: WalletConne
       updateConnected(_accounts, _contextAccounts);
         
       toast({
-        title: "Connecting Wallet",
-        description: "Please approve the connection in your LUKSO Universal Profile extension.",
+        title: "Connect Universal Profile",
+        description: "Connect your Universal Profile (top left) in one click.",
       });
     } catch (error: any) {
       console.error('Error connecting wallet:', error);
@@ -129,23 +129,25 @@ export default function WalletConnector({ buttonStyle = "default" }: WalletConne
     }
   }, [walletConnected, connectWallet]);
   
-  return (
-    <div>
-      {walletConnected ? (
-        <div className="flex items-center cursor-pointer" onClick={connectWallet}>
-          <span className="mr-2 text-text-secondary text-sm">{userAddressShort}</span>
-          <div className="w-8 h-8 rounded-full bg-background-lighter border-2 border-primary flex items-center justify-center">
-            <span className="material-icons text-sm">person</span>
-          </div>
-        </div>
-      ) : (
-        <div className="flex items-center cursor-pointer" onClick={connectWallet}>
-          <span className="mr-2 text-text-secondary text-sm">Connect</span>
-          <div className="w-8 h-8 rounded-full bg-background-lighter border-2 border-primary flex items-center justify-center">
-            <span className="material-icons text-sm">account_balance_wallet</span>
-          </div>
-        </div>
-      )}
-    </div>
-  );
+  // return (
+  //   <div>
+  //     {walletConnected ? (
+  //       <div className="flex items-center cursor-pointer" onClick={connectWallet}>
+  //         <span className="mr-2 text-text-secondary text-sm">{userAddressShort}</span>
+  //         <div className="w-8 h-8 rounded-full bg-background-lighter border-2 border-primary flex items-center justify-center">
+  //           <span className="material-icons text-sm">person</span>
+  //         </div>
+  //       </div>
+  //     ) : (
+  //       <div className="flex items-center cursor-pointer" onClick={connectWallet}>
+  //         <span className="mr-2 text-text-secondary text-sm">Connect</span>
+  //         <div className="w-8 h-8 rounded-full bg-background-lighter border-2 border-primary flex items-center justify-center">
+  //           <span className="material-icons text-sm">account_balance_wallet</span>
+  //         </div>
+  //       </div>
+  //     )}
+  //   </div>
+  // );
+
+  return null;
 }
